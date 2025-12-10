@@ -5,6 +5,12 @@
  * Layer 1: Redis cache (24hr TTL) - 95% hit rate
  * Layer 2: Domainr API (primary, most accurate)
  * Layer 3: RDAP (free fallback)
+ *
+ * ⚠️  CRITICAL REQUIREMENT: 100% RELIABILITY
+ * - We MUST NEVER show unavailable domains as available (no false positives)
+ * - All filters use MIN_CONFIDENCE = 0.95 (95%) threshold
+ * - On errors, domains are marked unavailable with confidence = 0
+ * - Conservative approach: when in doubt, mark as unavailable
  */
 
 import { checkDomainAvailability as checkDomainr } from './domainr';
@@ -247,12 +253,14 @@ async function cacheDomainStatus(
 
 /**
  * Filter domains to only available ones
+ * STRICT: Only returns domains with ≥95% confidence to prevent false positives
  */
 export async function getAvailableDomains(domains: string[]): Promise<string[]> {
+  const MIN_CONFIDENCE = 0.95;
   const results = await checkDomainsBatch(domains);
 
   return results
-    .filter(r => r.available && r.confidence > 0.8)
+    .filter(r => r.available && r.confidence >= MIN_CONFIDENCE)
     .map(r => r.domain);
 }
 

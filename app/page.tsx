@@ -114,8 +114,14 @@ export default function HomePage() {
         console.log('All domains:', allDomains);
         console.log('Available domains:', allDomains.filter(d => d.available));
 
-        // Only show available domains
-        const availableDomains = allDomains.filter(d => d.available);
+        // SAFETY: Double-check that we only show available domains with high confidence
+        // This is a backup filter in case API doesn't filter properly
+        const MIN_CONFIDENCE = 0.95;
+        const availableDomains = allDomains.filter(
+          d => d.available && d.confidence >= MIN_CONFIDENCE
+        );
+
+        console.log(`[Frontend] Strict filter: ${availableDomains.length}/${allDomains.length} domains passed (≥${MIN_CONFIDENCE} confidence)`);
 
         // Get AI analysis for available domains
         if (availableDomains.length > 0) {

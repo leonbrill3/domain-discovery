@@ -51,9 +51,15 @@ export async function checkDomainAvailability(domain: string): Promise<DomainSta
       throw new Error('Invalid Domainr response format');
     }
 
-    // Available statuses: undelegated, inactive
-    // Unavailable statuses: active, premium, reserved
-    const isAvailable = ['undelegated', 'inactive'].includes(statusData.status);
+    // STRICT AVAILABILITY CHECK:
+    // - "undelegated" = definitely available (not registered)
+    // - "inactive" = may be registered but not active (CONSERVATIVE: treat as unavailable)
+    // - "active" = registered and active (unavailable)
+    // - "premium" = premium domain (unavailable)
+    // - "reserved" = reserved by registry (unavailable)
+    //
+    // We ONLY accept "undelegated" to ensure 100% reliability
+    const isAvailable = statusData.status === 'undelegated';
 
     return {
       domain,

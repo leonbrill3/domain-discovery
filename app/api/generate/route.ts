@@ -53,7 +53,18 @@ export async function POST(request: NextRequest) {
 
     console.log(`[API/Generate] Checked ${allDomains.length} domains in ${checkDuration}ms`);
 
-    // Organize results by theme
+    // CRITICAL: Only return HIGH-CONFIDENCE AVAILABLE domains
+    // Confidence threshold: 0.95 (ultra-conservative to prevent false positives)
+    const MIN_CONFIDENCE = 0.95;
+
+    // Filter to ONLY available domains with high confidence
+    const availableOnly = availabilityResults.filter(
+      r => r.available && r.confidence >= MIN_CONFIDENCE
+    );
+
+    console.log(`[API/Generate] Filtered: ${availableOnly.length}/${allDomains.length} available (${((availableOnly.length / allDomains.length) * 100).toFixed(1)}%)`);
+
+    // Organize results by theme - ONLY AVAILABLE DOMAINS
     const domainsByTheme: Record<string, Array<{
       domain: string;
       available: boolean;
@@ -63,21 +74,28 @@ export async function POST(request: NextRequest) {
     }>> = {};
 
     for (const [themeId, domains] of Object.entries(results)) {
-      domainsByTheme[themeId] = domains.map(domain => {
-        const status = availabilityResults.find(r => r.domain === domain);
-        return {
-          domain,
-          available: status?.available || false,
-          price: status?.price,
-          currency: status?.currency,
-          confidence: status?.confidence || 0,
-        };
-      });
+      // Only include domains that passed our strict availability filter
+      const availableForTheme = domains
+        .map(domain => {
+          const status = availableOnly.find(r => r.domain === domain);
+          if (!status) return null; // Exclude unavailable or low-confidence
+
+          return {
+            domain,
+            available: true, // Always true since we pre-filtered
+            price: status.price,
+            currency: status.currency,
+            confidence: status.confidence,
+          };
+        })
+        .filter((d): d is NonNullable<typeof d> => d !== null);
+
+      domainsByTheme[themeId] = availableForTheme;
     }
 
-    // Calculate metrics
+    // Calculate metrics (using strict filter)
     const totalDuration = Date.now() - startTime;
-    const availableCount = availabilityResults.filter(r => r.available).length;
+    const availableCount = availableOnly.length; // Only high-confidence available
 
     // Return results
     return NextResponse.json({
