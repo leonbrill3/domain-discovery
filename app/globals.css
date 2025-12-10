@@ -1,27 +1,125 @@
+/**
+ * 🎨 GLOBAL STYLES - DomainSeek.ai
+ * Premium dark theme inspired by the best design systems
+ */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@layer base {
+  * {
+    @apply border-brand-border;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-white antialiased;
+    color: #1F2937 !important;  /* Force dark text on light background */
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+
+  /* Force all text to be visible on light background */
+  h1, h2, h3, h4, h5, h6, p, span, div, button, input {
+    color: inherit;
+  }
+
+  /* Selection color */
+  ::selection {
+    @apply bg-brand-blue/30 text-text-primary;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-gray-100;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-brand-border rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-brand-blue/50;
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /* Glassmorphism effect */
+  .glass {
+    @apply bg-brand-card/80 backdrop-blur-glass border border-brand-border;
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-brand-blue via-brand-violet to-brand-blue bg-clip-text text-transparent;
+  }
+
+  /* Button styles */
+  .btn-primary {
+    @apply px-6 py-3 bg-brand-blue text-white font-semibold rounded-lg transition-all hover:bg-brand-blue/90 hover:scale-105 active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 bg-brand-card text-text-primary font-semibold border border-brand-border rounded-lg transition-all hover:border-brand-blue/50 hover:scale-105 active:scale-95;
+  }
+
+  .btn-ghost {
+    @apply px-4 py-2 text-text-secondary hover:text-text-primary hover:bg-brand-card/50 rounded-lg transition-all;
+  }
+
+  /* Card styles */
+  .card {
+    @apply bg-brand-card border border-brand-border rounded-card p-6 transition-all hover:shadow-card-hover;
+  }
+
+  /* Input styles */
+  .input {
+    @apply w-full px-4 py-3 bg-brand-card border border-brand-border rounded-lg text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all;
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Animation delays */
+  .delay-100 {
+    animation-delay: 100ms;
+  }
+
+  .delay-200 {
+    animation-delay: 200ms;
+  }
+
+  .delay-300 {
+    animation-delay: 300ms;
+  }
+
+  /* Smooth transitions for all elements */
+  .transition-smooth {
+    @apply transition-all duration-normal ease-soft;
+  }
+}
+
+/* Loading states */
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.skeleton {
+  animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  @apply bg-brand-border rounded;
 }
