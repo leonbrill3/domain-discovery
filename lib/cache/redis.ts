@@ -80,6 +80,8 @@ export async function cacheSet<T>(
 }
 
 export async function cacheDel(key: string): Promise<void> {
+  if (!redis) return; // Skip if Redis not available
+
   try {
     const fullKey = getCacheKey(key);
     await redis.del(fullKey);
@@ -130,6 +132,8 @@ export async function getCacheStats(): Promise<{
   keyCount?: number;
   memoryUsage?: string;
 }> {
+  if (!redis) return { connected: false };
+
   try {
     // Test connection
     await redis.ping();
@@ -172,6 +176,8 @@ export async function clearCachePattern(pattern: string): Promise<number> {
  * Test Redis connection
  */
 export async function testRedisConnection(): Promise<boolean> {
+  if (!redis) return false;
+
   try {
     console.log('[Redis] Testing connection...');
 
