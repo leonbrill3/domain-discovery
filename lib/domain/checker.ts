@@ -132,7 +132,7 @@ function checkDomainDev(domain: string): DomainStatus {
     price: prices[tld] || 13,
     currency: 'USD',
     source: 'rdap',
-    confidence: 0.85,
+    confidence: 0.98, // Dev mode: high confidence so domains pass the 0.95 filter
     checkedAt: new Date(),
   };
 }
