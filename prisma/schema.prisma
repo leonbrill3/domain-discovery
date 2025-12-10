@@ -1,0 +1,154 @@
+// DomainSeek.ai - Database Schema
+// This schema defines all database tables for the domain discovery platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Domain cache - stores domain availability results
+// TTL: 24 hours for available, 12 hours for taken
+model DomainCache {
+  id          String   @id @default(cuid())
+  domain      String   @unique
+  available   Boolean
+  price       Float?
+  currency    String?  @default("USD")
+  source      String   // 'domainr' | 'rdap' | 'manual'
+  confidence  Float    @default(0.99) // 0.0-1.0
+  checkedAt   DateTime @default(now())
+  expiresAt   DateTime // Auto-calculated based on TTL
+
+  @@index([domain])
+  @@index([expiresAt])
+  @@index([available])
+  @@map("domain_cache")
+}
+
+// Generation sessions - tracks each user session
+model Session {
+  id            String   @id @default(cuid())
+  project       String   // User's project description
+  themes        String[] // Array of theme IDs selected
+  domainsCount  Int      @default(0)
+  createdAt     DateTime @default(now())
+  ipAddress     String?
+  userAgent     String?
+  referrer      String?
+
+  // Relations
+  favorites       Favorite[]
+  affiliateClicks AffiliateClick[]
+
+  @@index([createdAt])
+  @@index([ipAddress])
+  @@map("sessions")
+}
+
+// User favorites - domains saved by users
+model Favorite {
+  id          String   @id @default(cuid())
+  sessionId   String
+  domain      String
+  theme       String   // Theme that generated this domain
+  savedAt     DateTime @default(now())
+
+  // Relations
+  session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, domain])
+  @@index([sessionId])
+  @@index([domain])
+  @@map("favorites")
+}
+
+// Affiliate tracking - tracks clicks and conversions
+model AffiliateClick {
+  id          String   @id @default(cuid())
+  sessionId   String
+  domain      String
+  registrar   String   // 'namecheap' | 'godaddy' | 'porkbun' | 'spaceship'
+  clickedAt   DateTime @default(now())
+  converted   Boolean  @default(false)
+  convertedAt DateTime?
+  revenue     Float?   @default(0)
+
+  // Relations
+  session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([domain])
+  @@index([registrar])
+  @@index([clickedAt])
+  @@index([converted])
+  @@map("affiliate_clicks")
+}
+
+// Theme performance analytics
+model ThemeStats {
+  id              String   @id @default(cuid())
+  theme           String   @unique
+  generatedCount  Int      @default(0)  // Total domains generated
+  availableCount  Int      @default(0)  // Domains that were available
+  clickedCount    Int      @default(0)  // Times this theme was selected
+  purchasedCount  Int      @default(0)  // Domains purchased from this theme
+  avgAvailRate    Float?                // Average availability rate (0.0-1.0)
+
+  updatedAt       DateTime @updatedAt
+  createdAt       DateTime @default(now())
+
+  @@index([theme])
+  @@map("theme_stats")
+}
+
+// Rate limiting - tracks API usage per IP
+model RateLimit {
+  id          String   @id @default(cuid())
+  ipAddress   String
+  endpoint    String   // '/api/generate' | '/api/check' etc
+  requestCount Int     @default(1)
+  windowStart DateTime @default(now())
+  windowEnd   DateTime
+
+  @@unique([ipAddress, endpoint])
+  @@index([ipAddress])
+  @@index([windowEnd])
+  @@map("rate_limits")
+}
+
+// Analytics snapshots - daily/hourly aggregates
+model AnalyticsSnapshot {
+  id                String   @id @default(cuid())
+  date              DateTime
+  period            String   // 'hourly' | 'daily' | 'weekly'
+
+  // Metrics
+  sessionsCreated   Int      @default(0)
+  domainsGenerated  Int      @default(0)
+  domainsChecked    Int      @default(0)
+  favoritesSaved    Int      @default(0)
+  affiliateClicks   Int      @default(0)
+  conversions       Int      @default(0)
+  revenue           Float    @default(0)
+
+  // Performance
+  avgGenerationTime Float?
+  avgCheckTime      Float?
+  cacheHitRate      Float?
+
+  // Costs
+  claudeTokensUsed  Int      @default(0)
+  claudeCost        Float    @default(0)
+  domainrApiCalls   Int      @default(0)
+
+  createdAt         DateTime @default(now())
+
+  @@unique([date, period])
+  @@index([date])
+  @@index([period])
+  @@map("analytics_snapshots")
+}
