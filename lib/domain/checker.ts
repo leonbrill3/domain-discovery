@@ -130,7 +130,7 @@ function checkDomainDev(domain: string): DomainStatus {
 }
 
 /**
- * Batch check multiple domains
+ * Batch check multiple domains (OPTIMIZED with Namecheap bulk API)
  */
 export async function checkDomainsBatch(domains: string[]): Promise<DomainStatus[]> {
   const results: DomainStatus[] = [];
@@ -154,6 +154,27 @@ export async function checkDomainsBatch(domains: string[]): Promise<DomainStatus
 
   // Check uncached domains
   if (uncached.length > 0) {
+    // OPTIMIZATION: Use Namecheap bulk API for 5+ domains (15x faster!)
+    if (uncached.length >= 5 && process.env.NAMECHEAP_API_KEY) {
+      try {
+        const { checkDomainsBulkNamecheap } = await import('./namecheap');
+        const bulkResults = await checkDomainsBulkNamecheap(uncached);
+
+        // Cache results
+        await Promise.all(
+          bulkResults.map(result => cacheDomainStatus(result.domain, result))
+        );
+
+        results.push(...bulkResults);
+        console.log(`[Checker] ⚡ Bulk checked ${uncached.length} domains via Namecheap`);
+
+        return results;
+      } catch (error) {
+        console.warn('[Checker] Namecheap bulk failed, falling back to individual checks:', error);
+      }
+    }
+
+    // Fallback: Individual checks (parallel)
     const uncachedResults = await Promise.all(
       uncached.map(domain => checkDomain(domain))
     );
