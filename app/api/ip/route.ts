@@ -28,9 +28,38 @@ export async function GET() {
       }
     }
 
+    // Also test Namecheap API to see what IP it reports
+    let namecheapIp = 'not tested';
+    try {
+      const apiUser = process.env.NAMECHEAP_API_USER;
+      const apiKey = process.env.NAMECHEAP_API_KEY;
+      const clientIp = process.env.NAMECHEAP_CLIENT_IP || '127.0.0.1';
+
+      if (apiUser && apiKey) {
+        const url = `https://api.namecheap.com/xml.response?ApiUser=${apiUser}&ApiKey=${apiKey}&UserName=${apiUser}&Command=namecheap.domains.check&ClientIp=${clientIp}&DomainList=test.com`;
+        const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
+        const xml = await response.text();
+
+        // Extract IP from error message if present
+        const ipMatch = xml.match(/Invalid request IP:\s*(\d+\.\d+\.\d+\.\d+)/);
+        if (ipMatch) {
+          namecheapIp = `ERROR: ${ipMatch[1]} (not whitelisted)`;
+        } else if (xml.includes('Status="OK"')) {
+          namecheapIp = `OK (using ${clientIp})`;
+        } else {
+          // Extract any error
+          const errorMatch = xml.match(/<Error[^>]*>([^<]+)<\/Error>/);
+          namecheapIp = errorMatch ? `ERROR: ${errorMatch[1]}` : 'Unknown response';
+        }
+      }
+    } catch (e) {
+      namecheapIp = `Error: ${e}`;
+    }
+
     return NextResponse.json({
       success: true,
       outboundIps: results,
+      namecheapTest: namecheapIp,
       env: {
         NAMECHEAP_CLIENT_IP: process.env.NAMECHEAP_CLIENT_IP || 'not set',
         NAMECHEAP_API_USER: process.env.NAMECHEAP_API_USER ? 'set' : 'not set',
