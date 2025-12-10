@@ -42,19 +42,12 @@ export async function POST(request: NextRequest) {
 
     console.log(`[API/Generate] Generated ${allDomains.length} domains in ${generationTime}ms`);
 
-    // TODO: Add domain availability checking later
-    // For now, mark all AI-generated domains as available
+    // Check domain availability (with caching + fallback)
     const checkStartTime = Date.now();
-    const availabilityResults = allDomains.map(domain => ({
-      domain,
-      available: true,
-      price: 13, // Default price
-      currency: 'USD',
-      confidence: 1.0,
-    }));
+    const availabilityResults = await checkDomainsBatch(allDomains);
     const checkDuration = Date.now() - checkStartTime;
 
-    console.log(`[API/Generate] Marked ${allDomains.length} domains as available (AI-only mode)`);
+    console.log(`[API/Generate] Checked ${allDomains.length} domains in ${checkDuration}ms`);
 
     // Organize results by theme
     const domainsByTheme: Record<string, Array<{
