@@ -35,54 +35,50 @@ async function getRedis() {
  * Check domain availability with multi-layer strategy
  */
 export async function checkDomain(domain: string): Promise<DomainStatus> {
-  // DEV MODE: If no API keys configured, use smart heuristics for testing
-  const hasNamecheap = process.env.NAMECHEAP_API_KEY && process.env.NAMECHEAP_API_USER;
-  const hasDomainr = process.env.DOMAINR_API_KEY;
-  const isDev = !hasNamecheap && !hasDomainr;
-
-  if (isDev) {
-    return checkDomainDev(domain);
-  }
-
   // Layer 1: Check Redis cache (24hr TTL)
   const cached = await getCachedDomainStatus(domain);
   if (cached) {
     return cached;
   }
 
-  // Layer 2: Check Domainr API (primary, most accurate)
-  try {
-    const result = await checkDomainr(domain);
+  // Check what APIs are available
+  const hasNamecheap = process.env.NAMECHEAP_API_KEY && process.env.NAMECHEAP_API_USER;
+  const hasDomainr = process.env.DOMAINR_API_KEY;
 
-    // Cache the result
-    await cacheDomainStatus(domain, result);
+  // Layer 2: Check Domainr API (primary, most accurate) - if configured
+  if (hasDomainr) {
+    try {
+      const result = await checkDomainr(domain);
+      await cacheDomainStatus(domain, result);
+      return result;
+    } catch (error) {
+      console.warn(`[Checker] Domainr failed for ${domain}:`, error);
+      // Fall through to RDAP
+    }
+  }
+
+  // Layer 3: RDAP (FREE, accurate, works without API keys!)
+  // This is the primary method when no paid APIs are configured
+  try {
+    console.log(`[Checker] Using RDAP for ${domain}`);
+    const result = await checkDomainAvailabilityRDAP(domain);
+
+    // Cache the result (12 hours for RDAP)
+    await cacheDomainStatus(domain, result, 43200);
 
     return result;
 
-  } catch (error) {
-    console.warn(`[Checker] Domainr failed for ${domain}, trying RDAP fallback:`, error);
+  } catch (rdapError) {
+    console.error(`[Checker] RDAP failed for ${domain}:`, rdapError);
 
-    // Layer 3: RDAP fallback (free, less accurate but good enough)
-    try {
-      const result = await checkDomainAvailabilityRDAP(domain);
-
-      // Cache for shorter duration (12 hours) since less confident
-      await cacheDomainStatus(domain, result, 43200);
-
-      return result;
-
-    } catch (rdapError) {
-      console.error(`[Checker] All methods failed for ${domain}:`, rdapError);
-
-      // Conservative fallback: mark as unavailable
-      return {
-        domain,
-        available: false,
-        source: 'rdap',
-        confidence: 0,
-        checkedAt: new Date(),
-      };
-    }
+    // Conservative fallback: mark as unavailable
+    return {
+      domain,
+      available: false,
+      source: 'rdap',
+      confidence: 0,
+      checkedAt: new Date(),
+    };
   }
 }
 

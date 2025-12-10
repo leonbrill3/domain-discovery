@@ -2,39 +2,81 @@
  * 🌐 RDAP FALLBACK CLIENT - DomainSeek.ai
  *
  * RDAP (Registration Data Access Protocol) is the modern replacement for WHOIS.
- * Used as a free fallback when Domainr quota is exceeded.
+ * Uses proper IANA bootstrap to find the correct RDAP server for each TLD.
  *
- * Official replacement for WHOIS as of January 2025.
+ * Key endpoints:
+ * - .ai, .io, .app, .dev → https://rdap.identitydigital.services/rdap/
+ * - .com, .net → https://rdap.verisign.com/{tld}/v1/
+ *
+ * Response codes:
+ * - 200 = Domain exists (TAKEN)
+ * - 404 = Domain not found (AVAILABLE)
  */
 
 import type { DomainStatus } from './domainr';
 
+// RDAP server mapping for common TLDs
+const RDAP_SERVERS: Record<string, string> = {
+  // Identity Digital (formerly Donuts) - handles many new TLDs including .ai
+  'ai': 'https://rdap.identitydigital.services/rdap/',
+  'app': 'https://rdap.identitydigital.services/rdap/',
+  'dev': 'https://rdap.identitydigital.services/rdap/',
+  'io': 'https://rdap.identitydigital.services/rdap/',
+
+  // Verisign - .com, .net
+  'com': 'https://rdap.verisign.com/com/v1/',
+  'net': 'https://rdap.verisign.com/net/v1/',
+
+  // Other common TLDs
+  'org': 'https://rdap.publicinterestregistry.org/rdap/',
+  'co': 'https://rdap.nic.co/',
+};
+
+/**
+ * Get the RDAP server URL for a given TLD
+ */
+function getRdapServer(tld: string): string | null {
+  return RDAP_SERVERS[tld.toLowerCase()] || null;
+}
+
 /**
  * Check domain availability via RDAP
- * Uses Iceland's ISNIC RDAP service (7200 requests per 30 min - very generous!)
+ * Uses proper RDAP servers based on TLD
  */
 export async function checkDomainAvailabilityRDAP(domain: string): Promise<DomainStatus> {
+  const tld = domain.split('.').pop()?.toLowerCase() || '';
+  const rdapServer = getRdapServer(tld);
+
+  if (!rdapServer) {
+    console.warn(`[RDAP] No RDAP server configured for TLD: .${tld}`);
+    // Fall back to rdap.org which does bootstrap lookup
+    return checkDomainRDAPOrg(domain);
+  }
+
   try {
-    // Use ISNIC RDAP service
-    const url = `https://rdap.isnic.is/rdap/dac/${encodeURIComponent(domain)}`;
+    const url = `${rdapServer}domain/${encodeURIComponent(domain)}`;
+
+    console.log(`[RDAP] Checking ${domain} via ${rdapServer}`);
 
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'Accept': 'application/json',
+        'Accept': 'application/rdap+json, application/json',
       },
     });
 
     // RDAP convention:
-    // 404 = Domain is available
-    // 200 = Domain is taken/reserved/invalid
+    // 200 = Domain exists (TAKEN)
+    // 404 = Domain not found (AVAILABLE)
     const isAvailable = response.status === 404;
+
+    console.log(`[RDAP] ${domain}: ${response.status} → ${isAvailable ? 'AVAILABLE' : 'TAKEN'}`);
 
     return {
       domain,
       available: isAvailable,
       source: 'rdap',
-      confidence: 0.90,  // RDAP is accurate but slightly less than Domainr
+      confidence: 0.95,  // RDAP is very accurate
       checkedAt: new Date(),
     };
 
@@ -53,27 +95,34 @@ export async function checkDomainAvailabilityRDAP(domain: string): Promise<Domai
 }
 
 /**
- * Fallback to RDAP.org bootstrap service (alternative)
+ * Fallback to RDAP.org bootstrap service
+ * This service automatically redirects to the correct RDAP server
  */
 export async function checkDomainRDAPOrg(domain: string): Promise<DomainStatus> {
   try {
     const url = `https://rdap.org/domain/${encodeURIComponent(domain)}`;
 
+    console.log(`[RDAP.org] Checking ${domain}`);
+
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'Accept': 'application/json',
+        'Accept': 'application/rdap+json, application/json',
       },
+      redirect: 'follow', // Follow redirects to actual RDAP server
     });
 
-    // 404 = Available, 200 = Taken
+    // 200 = Domain exists (TAKEN)
+    // 404 = Domain not found (AVAILABLE)
     const isAvailable = response.status === 404;
+
+    console.log(`[RDAP.org] ${domain}: ${response.status} → ${isAvailable ? 'AVAILABLE' : 'TAKEN'}`);
 
     return {
       domain,
       available: isAvailable,
       source: 'rdap',
-      confidence: 0.88,
+      confidence: 0.90,  // Slightly lower confidence for fallback
       checkedAt: new Date(),
     };
 
@@ -95,7 +144,7 @@ export async function checkDomainRDAPOrg(domain: string): Promise<DomainStatus> 
  */
 export async function checkDomainsBatchRDAP(domains: string[]): Promise<DomainStatus[]> {
   const results: DomainStatus[] = [];
-  const MAX_CONCURRENT = 10;  // RDAP can handle more than Domainr
+  const MAX_CONCURRENT = 5;  // Be respectful to RDAP servers
 
   for (let i = 0; i < domains.length; i += MAX_CONCURRENT) {
     const batch = domains.slice(i, i + MAX_CONCURRENT);
@@ -104,13 +153,14 @@ export async function checkDomainsBatchRDAP(domains: string[]): Promise<DomainSt
       batch.map(domain => checkDomainAvailabilityRDAP(domain))
     );
 
-    for (const result of batchResults) {
+    for (let j = 0; j < batchResults.length; j++) {
+      const result = batchResults[j];
       if (result.status === 'fulfilled') {
         results.push(result.value);
       } else {
         // Error fallback
         results.push({
-          domain: domains[results.length],
+          domain: batch[j],
           available: false,
           source: 'rdap',
           confidence: 0,
@@ -121,7 +171,7 @@ export async function checkDomainsBatchRDAP(domains: string[]): Promise<DomainSt
 
     // Small delay to be respectful
     if (i + MAX_CONCURRENT < domains.length) {
-      await sleep(100);
+      await sleep(200);
     }
   }
 
