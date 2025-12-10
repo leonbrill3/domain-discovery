@@ -273,9 +273,8 @@ function isValidDomain(domain: string, constraints?: GenerationConstraints): boo
   // Must not start or end with hyphen
   if (domain.startsWith('-') || domain.endsWith('-')) return false;
 
-  // Must have content before TLD
-  const parts = domain.split('.');
-  if (parts[0].length < 2) return false;
+  // Must have content before TLD (already have parts from above)
+  if (name.length < 2) return false;
 
   return true;
 }
