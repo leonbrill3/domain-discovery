@@ -30,7 +30,7 @@ interface NamecheapCheckResponse {
 export async function checkDomainNamecheap(domain: string): Promise<DomainStatus> {
   const apiUser = process.env.NAMECHEAP_API_USER;
   const apiKey = process.env.NAMECHEAP_API_KEY;
-  const username = process.env.NAMECHEAP_USERNAME || apiUser;
+  const username = process.env.NAMECHEAP_USERNAME || apiUser || 'default';
   const clientIp = process.env.NAMECHEAP_CLIENT_IP || '127.0.0.1';
 
   if (!apiUser || !apiKey) {
@@ -84,7 +84,7 @@ export async function checkDomainNamecheap(domain: string): Promise<DomainStatus
 export async function checkDomainsBulkNamecheap(domains: string[]): Promise<DomainStatus[]> {
   const apiUser = process.env.NAMECHEAP_API_USER;
   const apiKey = process.env.NAMECHEAP_API_KEY;
-  const username = process.env.NAMECHEAP_USERNAME || apiUser;
+  const username = process.env.NAMECHEAP_USERNAME || apiUser || 'default';
   const clientIp = process.env.NAMECHEAP_CLIENT_IP || '127.0.0.1';
 
   if (!apiUser || !apiKey) {
