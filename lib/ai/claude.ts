@@ -103,7 +103,7 @@ Generate exactly ${count} domain names for this project using the ${theme.name} 
     const domains = parseDomains(text, count);
 
     // Check if prompt cache was used
-    const cached = response.usage.cache_read_input_tokens > 0;
+    const cached = (response.usage.cache_read_input_tokens ?? 0) > 0;
 
     console.log(`[Claude] Generated ${domains.length} domains for ${themeId} in ${duration}ms (cached: ${cached})`);
 
