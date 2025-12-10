@@ -29,8 +29,10 @@ async function getRedis() {
  * Check domain availability with multi-layer strategy
  */
 export async function checkDomain(domain: string): Promise<DomainStatus> {
-  // DEV MODE: If no API key, use smart heuristics for testing
-  const isDev = !process.env.DOMAINR_API_KEY;
+  // DEV MODE: If no API keys configured, use smart heuristics for testing
+  const hasNamecheap = process.env.NAMECHEAP_API_KEY && process.env.NAMECHEAP_API_USER;
+  const hasDomainr = process.env.DOMAINR_API_KEY;
+  const isDev = !hasNamecheap && !hasDomainr;
 
   if (isDev) {
     return checkDomainDev(domain);
