@@ -118,7 +118,18 @@ export async function checkDomainsBulkNamecheap(domains: string[]): Promise<Doma
       }
 
       const xmlText = await response.text();
+
+      // DEBUG: Log raw XML response
+      console.log(`[Namecheap] Raw XML response (first 500 chars):`, xmlText.substring(0, 500));
+
       const batchResults = parseNamecheapBulkXML(xmlText);
+
+      // DEBUG: Log parsed results
+      console.log(`[Namecheap] Parsed results:`, JSON.stringify(batchResults.map(r => ({
+        domain: r.Domain,
+        available: r.Available,
+        isPremium: r.IsPremiumName
+      })), null, 2));
 
       // Convert to DomainStatus format
       for (const result of batchResults) {
