@@ -21,7 +21,7 @@ export function generateMetadata(overrides?: Partial<Metadata>): Metadata {
       template: `%s | ${BRAND.name}`,
     },
     description: BRAND.description,
-    keywords: BRAND.keywords,
+    keywords: [...BRAND.keywords],
 
     // Open Graph (Facebook, LinkedIn)
     openGraph: {
