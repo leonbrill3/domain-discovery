@@ -26,7 +26,14 @@ Your domain names should be:
 - **Brandable**: Feels like a real company name
 - **SEO-Optimized**: Contains relevant keywords when appropriate
 - **Short**: Ideally 5-15 characters (excluding TLD)
-- **Available**: Focus on realistic, likely-available combinations
+- **AVAILABLE**: Focus on UNIQUE, creative combinations likely to be available
+
+CRITICAL: Prioritize domain availability!
+- Avoid common dictionary words alone (usually taken)
+- Prefer creative combinations and compounds (more likely available)
+- Add unique twists to common words (yogaflow > yoga)
+- Use modern suffixes: -ly, -ify, -hub, -lab, -flow, -base
+- Mix unexpected elements to create uniqueness
 
 SEO BEST PRACTICES:
 - Include relevant keywords naturally when they fit the theme

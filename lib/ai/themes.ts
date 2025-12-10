@@ -540,7 +540,160 @@ RULES:
 };
 
 /**
- * Export all themes (25 total)
+ * 🔑 KEYWORD-RICH - SEO-Optimized with Primary Keywords
+ */
+const KEYWORD_RICH: Theme = {
+  id: 'keyword-rich',
+  name: 'Keyword-Rich',
+  emoji: '🔑',
+  description: 'SEO-focused names with primary keywords',
+  prompt: `Generate KEYWORD-RICH domain names optimized for search engines.
+
+STRATEGY: Include the primary subject/keyword from the project prominently in the domain.
+
+PATTERNS:
+1. Pure Keyword: [keyword].com (e.g., yoga.com, beach.io, studio.ai)
+2. Keyword + Action: get[keyword].com, try[keyword].io, use[keyword].app
+3. Keyword + Descriptor: [keyword]studio.com, [keyword]space.io, [keyword]hub.app
+4. Descriptor + Keyword: best[keyword].com, my[keyword].io, your[keyword].app
+5. Keyword Compound: [keyword]flow.com, [keyword]base.io, [keyword]labs.app
+
+RULES:
+- Always include the main keyword/subject
+- Keep it search-friendly and obvious
+- Prioritize .com for maximum SEO
+- Avoid creative wordplay - be direct
+- Think: "What would someone search for?"`,
+  examples: ['yogaflow.com', 'beachstudio.io', 'getyoga.app', 'yogaspace.com', 'trybeach.io', 'yogahub.app'],
+  color: '#10B981',
+  gradient: 'from-green-600 to-emerald-700',
+  keywords: ['keyword', 'seo', 'search', 'optimized', 'direct'],
+};
+
+/**
+ * 🎯 DIRECT - Straight-to-the-Point Names
+ */
+const DIRECT: Theme = {
+  id: 'direct',
+  name: 'Direct',
+  emoji: '🎯',
+  description: 'Simple, no-frills, obvious names',
+  prompt: `Generate DIRECT and STRAIGHTFORWARD domain names.
+
+STRATEGY: Be clear and obvious. User should immediately know what the business is.
+
+PATTERNS:
+1. Action + Keyword: get[subject].com, try[subject].io, use[subject].app
+2. Simple Keyword: [subject].com, [subject]app.io, [subject]io.app
+3. Keyword + Now: [subject]now.com, instant[subject].io, quick[subject].app
+4. Subject + Online: [subject]online.com, [subject]web.io, [subject]digital.app
+5. The + Subject: the[subject].com, my[subject].io, your[subject].app
+
+RULES:
+- Maximum clarity - no cleverness needed
+- Keep it simple and memorable
+- Focus on action verbs: get, try, use, find, start
+- Think: "What's the simplest way to say this?"`,
+  examples: ['getyoga.com', 'trybeach.io', 'yogaapp.com', 'beachnow.io', 'useyoga.app', 'myyoga.com'],
+  color: '#3B82F6',
+  gradient: 'from-blue-600 to-blue-700',
+  keywords: ['direct', 'simple', 'clear', 'straightforward', 'action'],
+};
+
+/**
+ * 📝 DESCRIPTIVE - Self-Explanatory Names
+ */
+const DESCRIPTIVE: Theme = {
+  id: 'descriptive',
+  name: 'Descriptive',
+  emoji: '📝',
+  description: 'Clear, self-explanatory domain names',
+  prompt: `Generate DESCRIPTIVE domain names that explain themselves.
+
+STRATEGY: The domain name should describe exactly what the business does.
+
+PATTERNS:
+1. Function Description: [subject]studio.com, [subject]center.io, [subject]space.app
+2. Service Type: [subject]classes.com, [subject]retreat.io, [subject]lessons.app
+3. Location + Subject: beach[subject].com, online[subject].io, local[subject].app
+4. Subject + For: [subject]for[audience].com, [subject]made[simple].io
+5. Complete Description: [adjective][subject][type].com
+
+RULES:
+- Be crystal clear about what it is
+- Include descriptive words: studio, center, space, academy, institute
+- Longer is okay if it's clearer
+- Think: "Does a first-time visitor instantly understand?"`,
+  examples: ['yogastudio.com', 'beachretreat.io', 'yogacenter.app', 'yogalessons.com', 'beachyoga.io', 'yogaacademy.app'],
+  color: '#8B5CF6',
+  gradient: 'from-purple-600 to-violet-700',
+  keywords: ['descriptive', 'clear', 'explanatory', 'obvious', 'detailed'],
+};
+
+/**
+ * 🔍 EXACT-MATCH - Perfect SEO Keywords
+ */
+const EXACT_MATCH: Theme = {
+  id: 'exact-match',
+  name: 'Exact Match',
+  emoji: '🔍',
+  description: 'Exact keyword matches for maximum SEO',
+  prompt: `Generate EXACT-MATCH keyword domain names for maximum search engine ranking.
+
+STRATEGY: Use the exact keywords people search for. Highest SEO value.
+
+PATTERNS:
+1. Single Keyword: [keyword].com (e.g., yoga.com, beach.io, fitness.app)
+2. Two-Word Exact: [keyword1][keyword2].com (e.g., yogastudio.com, beachyoga.io)
+3. Geo + Keyword: [city][keyword].com, [location][keyword].io
+4. Keyword + Type: [keyword]classes.com, [keyword]training.io, [keyword]lessons.app
+5. Long-Tail: [exact search phrase].com (e.g., yogaforbeginners.com)
+
+RULES:
+- Use exact terms people search for on Google
+- Prioritize .com (highest SEO authority)
+- No creativity - pure keyword matching
+- Think: "What would rank #1 on Google?"
+- Include location/modifiers if relevant to project`,
+  examples: ['yoga.com', 'yogastudio.com', 'beachyoga.io', 'yogaclasses.app', 'yogaretreat.com', 'yogaonline.io'],
+  color: '#EF4444',
+  gradient: 'from-red-600 to-rose-700',
+  keywords: ['exact-match', 'seo', 'keywords', 'search', 'ranking', 'google'],
+};
+
+/**
+ * 💎 CLEAR - Crystal Clear, Obvious Names
+ */
+const CLEAR: Theme = {
+  id: 'clear',
+  name: 'Clear',
+  emoji: '💎',
+  description: 'Crystal clear, instantly understandable',
+  prompt: `Generate CRYSTAL CLEAR domain names with zero ambiguity.
+
+STRATEGY: Maximum clarity. Anyone should instantly understand what you do.
+
+PATTERNS:
+1. Subject + Space: [subject]space.com, [subject]place.io, [subject]spot.app
+2. Subject + Hub: [subject]hub.com, [subject]central.io, [subject]hq.app
+3. Subject + For: [subject]for[audience].com (e.g., yogaforbeginners.com)
+4. Online + Subject: online[subject].com, digital[subject].io, virtual[subject].app
+5. The Subject: the[subject].com, this[subject].io, that[subject].app
+
+RULES:
+- Zero confusion about what you do
+- Use common, familiar words
+- Avoid any wordplay or cleverness
+- Prioritize understanding over creativity
+- Think: "Would my grandma understand this?"`,
+  examples: ['yogaspace.com', 'beachhub.io', 'yogaplace.app', 'onlineyoga.com', 'yogacentral.io', 'theyogastudio.app'],
+  color: '#06B6D4',
+  gradient: 'from-cyan-600 to-blue-600',
+  keywords: ['clear', 'obvious', 'simple', 'understandable', 'transparent'],
+};
+
+/**
+ * Export all themes (30 total)
  */
 export const THEMES = {
   // Original 10
@@ -573,6 +726,13 @@ export const THEMES = {
 
   // New: Memorable and viral-worthy
   'catchy': CATCHY,
+
+  // New: SEO and keyword-focused themes
+  'keyword-rich': KEYWORD_RICH,
+  'direct': DIRECT,
+  'descriptive': DESCRIPTIVE,
+  'exact-match': EXACT_MATCH,
+  'clear': CLEAR,
 } as const;
 
 export type ThemeId = keyof typeof THEMES;
