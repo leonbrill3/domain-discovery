@@ -16,6 +16,9 @@ const GenerateRequestSchema = z.object({
   project: z.string().min(5).max(500),
   themes: z.array(z.string()).min(1).max(10), // Increased from 5 to 10 for recipes
   countPerTheme: z.number().min(1).max(50).optional().default(10), // Min reduced from 5 to 1 for recipes
+  tlds: z.array(z.string()).min(1).max(5).optional().default(['com', 'io', 'ai']), // User-selected TLDs
+  charMin: z.number().min(3).max(15).optional().default(4), // Minimum characters (before TLD)
+  charMax: z.number().min(3).max(20).optional().default(10), // Maximum characters (before TLD)
 });
 
 export async function POST(request: NextRequest) {
@@ -24,7 +27,7 @@ export async function POST(request: NextRequest) {
 
     // Validate request
     const validated = GenerateRequestSchema.parse(body);
-    const { project, themes, countPerTheme } = validated;
+    const { project, themes, countPerTheme, tlds, charMin, charMax } = validated;
 
     console.log(`[API/Generate] Request: ${themes.length} themes × ${countPerTheme} domains`);
 
@@ -34,7 +37,8 @@ export async function POST(request: NextRequest) {
     const { results, totalTokensUsed, generationTime } = await generateDomainsForThemes(
       project,
       themes as ThemeId[],
-      countPerTheme
+      countPerTheme,
+      { tlds, charMin, charMax } // Pass user constraints
     );
 
     // Flatten all domains for batch checking

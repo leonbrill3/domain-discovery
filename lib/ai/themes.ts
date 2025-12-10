@@ -489,7 +489,58 @@ const FINANCE: Theme = {
 };
 
 /**
- * Export all themes (24 total)
+ * 🎯 CATCHY - Memorable, Viral, Sticky
+ */
+const CATCHY: Theme = {
+  id: 'catchy',
+  name: 'Catchy',
+  emoji: '🎯',
+  description: 'Memorable, viral-worthy names that stick',
+  prompt: `Generate CATCHY and MEMORABLE domain names that stick in people's minds.
+
+CHARACTERISTICS:
+- Short, snappy, easy to remember
+- Fun to say out loud (phonetic appeal)
+- Clever wordplay or alliteration
+- Rhythmic quality that flows
+- Viral/shareable potential
+
+THEME ELEMENTS:
+- Onomatopoeia: Ping, Snap, Buzz, Zip, Pop, Spark, Click, Boom, Zap, Whoosh
+- Alliteration: BuzzBrains, SnapStudio, ZenZone, FlowFast, GlowGo
+- Rhythmic: TempoFlow, EchoLab, PulseRun, BeatBase, VibeVault
+- Compound Fun: ZipZap, SnapFlow, BuzzForge, SparkLink, PopShift
+- Single Punchy: Bolt, Swift, Glow, Dash, Flash, Spark
+
+NAMING PATTERNS:
+1. Alliterative: buzzbrains.app, pingpulse.io, snapstudio.com, flowfast.dev
+2. Onomatopoeia: zzapp.com, popshift.io, clickflow.dev, whooshlab.app
+3. Rhythmic: tempoflow.io, echolab.app, beatrun.com, pulsebase.dev
+4. Compound playful: zipzap.io, snapflow.app, buzzforge.com, glowgo.io
+5. Single powerful: bolt.io, glow.app, dash.com, spark.io, swift.dev
+
+RULES:
+- Super short and snappy (4-10 characters preferred)
+- Easy to spell - avoid complex or ambiguous words
+- Hashtag-friendly (should work as #YourBrand)
+- Make it infectious, energetic, unforgettable
+- Avoid anything bland, generic, or forgettable
+- Test: Would you remember it after hearing it once?`,
+  examples: [
+    'zipzap.io',
+    'buzzflow.app',
+    'snapstudio.com',
+    'pingpulse.io',
+    'sparklab.dev',
+    'boltshift.app',
+  ],
+  color: '#FF6B35',
+  gradient: 'from-orange-500 via-red-500 to-pink-600',
+  keywords: ['catchy', 'memorable', 'viral', 'short', 'punchy', 'sticky', 'fun', 'energetic'],
+};
+
+/**
+ * Export all themes (25 total)
  */
 export const THEMES = {
   // Original 10
@@ -519,6 +570,9 @@ export const THEMES = {
   'egyptian': EGYPTIAN_MYTHOLOGY,
   'constellations': CONSTELLATIONS,
   'finance': FINANCE,
+
+  // New: Memorable and viral-worthy
+  'catchy': CATCHY,
 } as const;
 
 export type ThemeId = keyof typeof THEMES;

@@ -18,14 +18,23 @@ const anthropic = new Anthropic({
  * This is the same for all requests, so we cache it aggressively.
  * Saves 90% on these tokens!
  */
-const SYSTEM_PROMPT = `You are an expert domain name generator for startups, businesses, and creative projects.
+const SYSTEM_PROMPT = `You are an expert domain name generator optimized for both BRANDING and SEO.
 
 Your domain names should be:
 - **Memorable**: Easy to remember and recall
 - **Pronounceable**: Can be said out loud clearly
 - **Brandable**: Feels like a real company name
+- **SEO-Optimized**: Contains relevant keywords when appropriate
 - **Short**: Ideally 5-15 characters (excluding TLD)
 - **Available**: Focus on realistic, likely-available combinations
+
+SEO BEST PRACTICES:
+- Include relevant keywords naturally when they fit the theme
+- Prioritize .com for maximum SEO authority (but use others when appropriate)
+- Avoid hyphens and numbers (harder to rank and remember)
+- Keep it spellable (reduces bounce rate from typos)
+- Balance keyword-rich (good SEO) with brandable (good trademark)
+- Consider voice search: easy to pronounce = better voice SEO
 
 CRITICAL OUTPUT RULES:
 1. Return ONLY domain names, one per line
@@ -45,12 +54,22 @@ NEVER output like this:
 - zeusfit.io (good for...)`;
 
 /**
+ * Domain generation constraints
+ */
+export interface GenerationConstraints {
+  tlds?: string[];      // User-selected TLDs (e.g., ['com', 'io'])
+  charMin?: number;     // Minimum characters (before TLD)
+  charMax?: number;     // Maximum characters (before TLD)
+}
+
+/**
  * Generate domain names for a specific theme
  */
 export async function generateDomainsForTheme(
   project: string,
   themeId: ThemeId,
-  count: number = 10
+  count: number = 10,
+  constraints?: GenerationConstraints
 ): Promise<{
   domains: string[];
   tokensUsed: { input: number; output: number };
@@ -62,12 +81,26 @@ export async function generateDomainsForTheme(
     throw new Error(`Invalid theme ID: ${themeId}`);
   }
 
-  // Build user prompt
+  // Build constraints text
+  const tldList = constraints?.tlds && constraints.tlds.length > 0
+    ? constraints.tlds.map(t => `.${t}`).join(', ')
+    : '.com, .io, .ai, .app, .dev';
+
+  const charLength = constraints?.charMin && constraints?.charMax
+    ? `${constraints.charMin}-${constraints.charMax} characters (excluding TLD)`
+    : '5-15 characters (excluding TLD)';
+
+  // Build user prompt with explicit constraints
   const userPrompt = `Project Description: "${project}"
 
 Theme: ${theme.name}
 
 ${theme.prompt}
+
+CONSTRAINTS:
+- TLDs: ONLY use these TLDs: ${tldList}
+- Length: ${charLength}
+- Each domain MUST match both constraints
 
 Generate exactly ${count} domain names for this project using the ${theme.name} theme.`;
 
@@ -99,8 +132,8 @@ Generate exactly ${count} domain names for this project using the ${theme.name} 
       ? response.content[0].text
       : '';
 
-    // Parse domains from response
-    const domains = parseDomains(text, count);
+    // Parse domains from response (with constraints for validation)
+    const domains = parseDomains(text, count, constraints);
 
     // Check if prompt cache was used
     const cached = (response.usage.cache_read_input_tokens ?? 0) > 0;
@@ -128,7 +161,8 @@ Generate exactly ${count} domain names for this project using the ${theme.name} 
 export async function generateDomainsForThemes(
   project: string,
   themeIds: ThemeId[],
-  countPerTheme: number = 10
+  countPerTheme: number = 10,
+  constraints?: GenerationConstraints
 ): Promise<{
   results: Record<ThemeId, string[]>;
   totalTokensUsed: { input: number; output: number };
@@ -136,9 +170,9 @@ export async function generateDomainsForThemes(
 }> {
   const startTime = Date.now();
 
-  // Generate all themes in parallel
+  // Generate all themes in parallel (pass constraints to each)
   const promises = themeIds.map(themeId =>
-    generateDomainsForTheme(project, themeId, countPerTheme)
+    generateDomainsForTheme(project, themeId, countPerTheme, constraints)
   );
 
   const responses = await Promise.all(promises);
@@ -172,7 +206,7 @@ export async function generateDomainsForThemes(
  * Parse domains from Claude's response
  * Handles various formatting issues and extracts valid domains
  */
-function parseDomains(text: string, expectedCount: number): string[] {
+function parseDomains(text: string, expectedCount: number, constraints?: GenerationConstraints): string[] {
   // Split by newlines
   const lines = text.split('\n');
 
@@ -192,8 +226,8 @@ function parseDomains(text: string, expectedCount: number): string[] {
       // Remove extra spaces
       .replace(/\s+/g, '');
 
-    // Validate domain format
-    if (isValidDomain(cleaned)) {
+    // Validate domain format (with user constraints)
+    if (isValidDomain(cleaned, constraints)) {
       domains.push(cleaned);
     }
   }
@@ -210,17 +244,28 @@ function parseDomains(text: string, expectedCount: number): string[] {
 /**
  * Validate domain format
  */
-function isValidDomain(domain: string): boolean {
+function isValidDomain(domain: string, constraints?: GenerationConstraints): boolean {
   // Must have a dot (TLD)
   if (!domain.includes('.')) return false;
 
-  // Must end with valid TLD
-  const validTLDs = ['.com', '.io', '.ai', '.app', '.dev'];
-  const hasValidTLD = validTLDs.some(tld => domain.endsWith(tld));
+  // Extract name and TLD
+  const parts = domain.split('.');
+  if (parts.length < 2) return false;
+
+  const name = parts[0];
+  const tld = parts.slice(1).join('.'); // Handle multi-part TLDs
+
+  // Check TLD against user constraints
+  const validTLDs = constraints?.tlds && constraints.tlds.length > 0
+    ? constraints.tlds
+    : ['com', 'io', 'ai', 'app', 'dev'];
+  const hasValidTLD = validTLDs.some(t => domain.endsWith(`.${t}`));
   if (!hasValidTLD) return false;
 
-  // Must be reasonable length (5-30 chars)
-  if (domain.length < 5 || domain.length > 30) return false;
+  // Check character length (BEFORE TLD, as user expects)
+  const minLen = constraints?.charMin || 3;
+  const maxLen = constraints?.charMax || 30;
+  if (name.length < minLen || name.length > maxLen) return false;
 
   // Must not have special characters (except dot and hyphen)
   if (!/^[a-z0-9.-]+$/.test(domain)) return false;
