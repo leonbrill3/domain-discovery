@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: domainseek-ai
+    runtime: node
+    plan: free
+    region: oregon
+    branch: main
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_APP_NAME
+        value: DomainSeek
+      - key: ANTHROPIC_API_KEY
+        sync: false
