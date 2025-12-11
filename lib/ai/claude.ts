@@ -70,6 +70,73 @@ export interface GenerationConstraints {
 }
 
 /**
+ * Interpret user input - detect commands vs project descriptions
+ * Returns processed input and any extracted constraints
+ */
+export async function interpretUserInput(input: string): Promise<{
+  project: string;
+  extractedConstraints: Partial<GenerationConstraints>;
+  isCommand: boolean;
+}> {
+  // Quick pattern matching for common commands (avoid API call)
+  const lowerInput = input.toLowerCase().trim();
+
+  // Detect length commands
+  const lengthPatterns = [
+    { pattern: /(\d+)\s*(?:letter|char|character)s?\s*(?:word|name|domain)?/i, extract: (m: RegExpMatchArray) => parseInt(m[1]) },
+    { pattern: /(?:short|tiny|brief)\s*(?:name|domain|word)?/i, extract: () => ({ min: 3, max: 6 }) },
+    { pattern: /(?:long|longer)\s*(?:name|domain|word)?/i, extract: () => ({ min: 10, max: 15 }) },
+  ];
+
+  // Check for length-related commands
+  for (const { pattern, extract } of lengthPatterns) {
+    const match = lowerInput.match(pattern);
+    if (match) {
+      const result = extract(match);
+      const constraints: Partial<GenerationConstraints> = typeof result === 'number'
+        ? { charMin: result, charMax: result }
+        : { charMin: result.min, charMax: result.max };
+
+      // It's a command - generate generic creative domains
+      return {
+        project: 'creative brand name', // Generic project for pure creative generation
+        extractedConstraints: constraints,
+        isCommand: true,
+      };
+    }
+  }
+
+  // Detect style commands
+  const styleCommands = [
+    { patterns: ['catchy', 'memorable', 'punchy'], style: 'catchy brand name' },
+    { patterns: ['professional', 'corporate', 'business'], style: 'professional business' },
+    { patterns: ['tech', 'startup', 'modern'], style: 'tech startup' },
+    { patterns: ['fun', 'playful', 'quirky'], style: 'fun creative brand' },
+  ];
+
+  for (const { patterns, style } of styleCommands) {
+    if (patterns.some(p => lowerInput.includes(p))) {
+      // Check if it's JUST the command word (no actual project)
+      const justCommand = patterns.some(p => lowerInput === p || lowerInput === `something ${p}` || lowerInput === `a ${p} name`);
+      if (justCommand) {
+        return {
+          project: style,
+          extractedConstraints: {},
+          isCommand: true,
+        };
+      }
+    }
+  }
+
+  // Not a command - return as-is
+  return {
+    project: input,
+    extractedConstraints: {},
+    isCommand: false,
+  };
+}
+
+/**
  * Generate domain names for a specific theme
  */
 export async function generateDomainsForTheme(

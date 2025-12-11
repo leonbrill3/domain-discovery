@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { generateDomainsForThemes } from '@/lib/ai/claude';
+import { generateDomainsForThemes, interpretUserInput } from '@/lib/ai/claude';
 import { checkDomainsBatch } from '@/lib/domain/checker';
 import type { ThemeId } from '@/lib/ai/themes';
 import { z } from 'zod';
@@ -27,9 +27,23 @@ export async function POST(request: NextRequest) {
 
     // Validate request
     const validated = GenerateRequestSchema.parse(body);
-    const { project, themes, countPerTheme, tlds, charMin, charMax } = validated;
+    let { project, themes, countPerTheme, tlds, charMin, charMax } = validated;
 
-    console.log(`[API/Generate] Request: ${themes.length} themes × ${countPerTheme} domains`);
+    // Interpret user input - detect commands like "4 letter word" or "something catchy"
+    const interpreted = await interpretUserInput(project);
+
+    if (interpreted.isCommand) {
+      console.log(`[API/Generate] Detected command: "${project}" → project: "${interpreted.project}"`);
+      project = interpreted.project;
+
+      // Apply extracted constraints (but don't override user's explicit settings)
+      if (interpreted.extractedConstraints.charMin) {
+        charMin = interpreted.extractedConstraints.charMin;
+        charMax = interpreted.extractedConstraints.charMax || charMin;
+      }
+    }
+
+    console.log(`[API/Generate] Request: ${themes.length} themes × ${countPerTheme} domains (chars: ${charMin}-${charMax})`);
 
     // Generate domains using Claude
     const startTime = Date.now();
