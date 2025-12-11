@@ -204,20 +204,25 @@ export default function HomePage() {
 
   const getAnalysis = useCallback(async (domainsToAnalyze: DomainResult[]) => {
     if (domainsToAnalyze.length === 0) return domainsToAnalyze;
-    try {
-      const response = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ domains: domainsToAnalyze.map(d => d.domain), project }),
-      });
-      const data = await response.json();
-      if (data.success && data.analyses) {
-        domainsToAnalyze.forEach(domain => {
-          const analysis = data.analyses.find((a: DomainAnalysis) => a.domain === domain.domain);
-          if (analysis) domain.analysis = analysis;
+    // Batch in chunks of 20 (API limit)
+    const BATCH_SIZE = 20;
+    for (let i = 0; i < domainsToAnalyze.length; i += BATCH_SIZE) {
+      const batch = domainsToAnalyze.slice(i, i + BATCH_SIZE);
+      try {
+        const response = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ domains: batch.map(d => d.domain), project }),
         });
-      }
-    } catch (error) { console.warn('Analysis failed:', error); }
+        const data = await response.json();
+        if (data.success && data.analyses) {
+          batch.forEach(domain => {
+            const analysis = data.analyses.find((a: DomainAnalysis) => a.domain === domain.domain);
+            if (analysis) domain.analysis = analysis;
+          });
+        }
+      } catch (error) { console.warn('Analysis batch failed:', error); }
+    }
     return domainsToAnalyze;
   }, [project]);
 
