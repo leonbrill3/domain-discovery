@@ -158,8 +158,8 @@ export async function checkDomainsBatch(domains: string[]): Promise<DomainStatus
 
   // Check uncached domains
   if (uncached.length > 0) {
-    // OPTIMIZATION: Use Namecheap bulk API for 5+ domains (15x faster!)
-    if (uncached.length >= 5 && process.env.NAMECHEAP_API_KEY) {
+    // OPTIMIZATION: Always use Namecheap bulk API (50 domains per call = same cost)
+    if (process.env.NAMECHEAP_API_KEY) {
       try {
         const { checkDomainsBulkNamecheap } = await import('./namecheap');
         const bulkResults = await checkDomainsBulkNamecheap(uncached);

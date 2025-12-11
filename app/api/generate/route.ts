@@ -15,7 +15,7 @@ import { z } from 'zod';
 const GenerateRequestSchema = z.object({
   project: z.string().min(5).max(500),
   themes: z.array(z.string()).min(1).max(10), // Increased from 5 to 10 for recipes
-  countPerTheme: z.number().min(1).max(50).optional().default(10), // Min reduced from 5 to 1 for recipes
+  countPerTheme: z.number().min(1).max(50).optional().default(50), // Maxed to 50 to fill Namecheap bulk API
   tlds: z.array(z.string()).min(1).max(5).optional().default(['com', 'io', 'ai']), // User-selected TLDs
   charMin: z.number().min(3).max(15).optional().default(4), // Minimum characters (before TLD)
   charMax: z.number().min(3).max(20).optional().default(10), // Maximum characters (before TLD)
