@@ -83,6 +83,14 @@ export default function HomePage() {
     setSelectedTLDs(prev =>
       prev.includes(tld) ? prev.filter(t => t !== tld) : [...prev, tld]
     );
+    // Clear all recipe results when TLD changes (they're now invalid)
+    setRecipes(recipes.map(r => ({ ...r, domains: undefined })));
+  };
+
+  const handleCharRangeChange = (newRange: [number, number]) => {
+    setCharRange(newRange);
+    // Clear all recipe results when character range changes (they're now invalid)
+    setRecipes(recipes.map(r => ({ ...r, domains: undefined })));
   };
 
   const generateRecipe = async (recipeId: string) => {
@@ -300,7 +308,7 @@ export default function HomePage() {
                   min={3}
                   max={15}
                   value={charRange}
-                  onChange={setCharRange}
+                  onChange={handleCharRangeChange}
                 />
               </div>
             </div>
