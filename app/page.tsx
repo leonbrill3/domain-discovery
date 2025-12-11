@@ -127,8 +127,16 @@ export default function HomePage() {
         // SAFETY: Double-check that we only show available domains with high confidence
         // This is a backup filter in case API doesn't filter properly
         const MIN_CONFIDENCE = 0.95;
+
+        // Get all domains already shown in OTHER recipes (to avoid duplicates)
+        const existingDomains = new Set(
+          recipes
+            .filter(r => r.id !== recipeId && r.domains)
+            .flatMap(r => r.domains!.map(d => d.domain))
+        );
+
         const availableDomains = allDomains.filter(
-          d => d.available && d.confidence >= MIN_CONFIDENCE
+          d => d.available && d.confidence >= MIN_CONFIDENCE && !existingDomains.has(d.domain)
         );
 
         console.log(`[Frontend] Strict filter: ${availableDomains.length}/${allDomains.length} domains passed (≥${MIN_CONFIDENCE} confidence)`);
