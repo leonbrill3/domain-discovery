@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     // Check Wayback Machine for available domains (to detect previously registered)
     const availableDomainNames = availableOnly.map(r => r.domain);
     const waybackResults = await checkWaybackBatch(availableDomainNames, 10);
-    const previouslyRegistered = [...waybackResults.values()].filter(r => r.wasRegistered).length;
+    const previouslyRegistered = Array.from(waybackResults.values()).filter(r => r.wasRegistered).length;
     console.log(`[API/Generate] Wayback: ${previouslyRegistered}/${availableDomainNames.length} were previously registered`);
 
     // Organize results by theme - ONLY AVAILABLE DOMAINS
