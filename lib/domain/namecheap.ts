@@ -119,6 +119,15 @@ export async function checkDomainsBulkNamecheap(domains: string[]): Promise<Doma
 
       const xmlText = await response.text();
 
+      // Check for API errors (IP whitelist, rate limit, etc.)
+      if (xmlText.includes('Status="ERROR"')) {
+        const errorMatch = xmlText.match(/<Error[^>]*>([^<]+)<\/Error>/);
+        const errorMsg = errorMatch ? errorMatch[1] : 'Unknown API error';
+        console.error(`[Namecheap] API Error: ${errorMsg}`);
+        // THROW so checker falls back to RDAP
+        throw new Error(`Namecheap API error: ${errorMsg}`);
+      }
+
       // DEBUG: Log raw XML response
       console.log(`[Namecheap] Raw XML response (first 500 chars):`, xmlText.substring(0, 500));
 
@@ -148,17 +157,8 @@ export async function checkDomainsBulkNamecheap(domains: string[]): Promise<Doma
 
     } catch (error) {
       console.error(`[Namecheap] Bulk check error for batch:`, error);
-
-      // On error, mark all as unavailable (conservative)
-      for (const domain of batch) {
-        results.push({
-          domain,
-          available: false,
-          source: 'domainr',
-          confidence: 0,
-          checkedAt: new Date(),
-        });
-      }
+      // Re-throw so checker.ts falls back to RDAP
+      throw error;
     }
 
     // Rate limiting: 200ms between batches (Namecheap allows 20 calls/min)
