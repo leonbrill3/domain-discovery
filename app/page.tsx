@@ -44,6 +44,7 @@ export default function HomePage() {
   const [charRange, setCharRange] = useState<[number, number]>([4, 10]);
   const [selectedDomain, setSelectedDomain] = useState<DomainResult | null>(null);
   const [hoveredDomain, setHoveredDomain] = useState<string | null>(null);
+  const [loadingAnalysis, setLoadingAnalysis] = useState(false);
 
   const activeRecipe = recipes.find(r => r.id === activeRecipeId) || recipes[0];
 
@@ -176,6 +177,40 @@ export default function HomePage() {
     const validRecipes = recipes.filter(r => r.themes.length > 0);
     for (const recipe of validRecipes) {
       await generateRecipe(recipe.id);
+    }
+  };
+
+  // Fetch analysis when domain is clicked
+  const handleDomainClick = async (domainResult: DomainResult) => {
+    // If already has analysis, just show modal
+    if (domainResult.analysis) {
+      setSelectedDomain(domainResult);
+      return;
+    }
+
+    setLoadingAnalysis(true);
+    setSelectedDomain(domainResult);
+
+    try {
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          domains: [domainResult.domain],
+          project: project || 'general brand',
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.analyses && data.analyses.length > 0) {
+        const analysis = data.analyses[0];
+        setSelectedDomain({ ...domainResult, analysis });
+      }
+    } catch (error) {
+      console.error('Analysis error:', error);
+    } finally {
+      setLoadingAnalysis(false);
     }
   };
 
@@ -402,7 +437,7 @@ export default function HomePage() {
                               key={domainResult.domain}
                               data-tooltip-id={`tooltip-${domainResult.domain}`}
                               className="flex items-center justify-between p-2 hover:bg-blue-50 rounded-lg transition-colors group cursor-pointer"
-                              onClick={() => setSelectedDomain(domainResult)}
+                              onClick={() => handleDomainClick(domainResult)}
                               onMouseEnter={() => setHoveredDomain(domainResult.domain)}
                               onMouseLeave={() => setHoveredDomain(null)}
                             >
@@ -526,19 +561,29 @@ export default function HomePage() {
       </footer>
 
       {/* Domain Details Modal */}
-      {selectedDomain && selectedDomain.analysis && (
-        <DomainDetailsModal
-          domain={selectedDomain.domain}
-          price={selectedDomain.price || 13}
-          analysis={selectedDomain.analysis}
-          onClose={() => setSelectedDomain(null)}
-          onBuy={() => {
-            window.open(
-              `https://www.namecheap.com/domains/registration/results/?domain=${selectedDomain.domain}`,
-              '_blank'
-            );
-          }}
-        />
+      {selectedDomain && (
+        loadingAnalysis ? (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-8 text-center shadow-2xl">
+              <Loader2 className="w-12 h-12 animate-spin text-brand-blue mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Analyzing {selectedDomain.domain}</h3>
+              <p className="text-sm text-gray-600">Getting AI insights...</p>
+            </div>
+          </div>
+        ) : selectedDomain.analysis ? (
+          <DomainDetailsModal
+            domain={selectedDomain.domain}
+            price={selectedDomain.price || 13}
+            analysis={selectedDomain.analysis}
+            onClose={() => setSelectedDomain(null)}
+            onBuy={() => {
+              window.open(
+                `https://www.namecheap.com/domains/registration/results/?domain=${selectedDomain.domain}`,
+                '_blank'
+              );
+            }}
+          />
+        ) : null
       )}
     </div>
   );
