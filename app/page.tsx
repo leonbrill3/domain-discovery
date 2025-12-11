@@ -396,8 +396,8 @@ export default function HomePage() {
               )}
             </div>
 
-            {/* Compact Domain Chips */}
-            <div className="flex flex-wrap">
+            {/* Domain Grid - 4 columns with aligned prices */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
               {filteredDomains.map((domain) => {
                 const saved = isSaved(domain.domain);
                 return (
@@ -405,16 +405,20 @@ export default function HomePage() {
                     data-tooltip-id="domain-tooltips"
                     data-tooltip-html={domain.analysis ? `<div class="text-xs"><div class="font-bold">${domain.domain}</div><div>Score: ${domain.analysis.overallScore.toFixed(1)}/10</div><div class="text-gray-400">${domain.analysis.meaning || ''}</div></div>` : ''}
                     onClick={() => handleDomainClick(domain)}
-                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg cursor-pointer transition-all mr-2 mb-2 ${saved ? 'bg-pink-50 hover:bg-pink-100' : 'bg-gray-50 hover:bg-blue-50'}`}
+                    className={`flex items-center justify-between gap-1 px-2 py-1.5 rounded-lg cursor-pointer transition-all ${saved ? 'bg-pink-50 hover:bg-pink-100' : 'bg-gray-50 hover:bg-blue-50'}`}
                   >
-                    <span className="font-mono text-sm font-semibold text-gray-900 hover:text-brand-blue">{domain.domain}</span>
-                    <span className="text-xs font-bold text-brand-blue">{domain.analysis ? domain.analysis.overallScore.toFixed(1) : '—'}</span>
-                    <a href={`https://www.namecheap.com/domains/registration/results/?domain=${domain.domain}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
-                      className="px-2 py-0.5 bg-brand-blue text-white text-xs font-bold rounded text-center hover:bg-blue-600 transition-colors"
-                    >${domain.price || (domain.domain.endsWith('.ai') ? 70 : 13)}</a>
-                    <button onClick={(e) => { e.stopPropagation(); toggleSave(domain); }} className={`transition-colors ${saved ? 'text-pink-500' : 'text-gray-300 hover:text-pink-500'}`}>
-                      <Heart className={`w-4 h-4 ${saved ? 'fill-pink-500' : ''}`} />
-                    </button>
+                    <div className="flex items-center gap-1 min-w-0">
+                      <span className="font-mono text-sm font-semibold text-gray-900 truncate">{domain.domain}</span>
+                      <span className="text-xs font-bold text-brand-blue flex-shrink-0">{domain.analysis ? domain.analysis.overallScore.toFixed(1) : '—'}</span>
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <a href={`https://www.namecheap.com/domains/registration/results/?domain=${domain.domain}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
+                        className="px-2 py-0.5 bg-brand-blue text-white text-xs font-bold rounded text-center hover:bg-blue-600 transition-colors"
+                      >${domain.price || (domain.domain.endsWith('.ai') ? 70 : 13)}</a>
+                      <button onClick={(e) => { e.stopPropagation(); toggleSave(domain); }} className={`transition-colors ${saved ? 'text-pink-500' : 'text-gray-300 hover:text-pink-500'}`}>
+                        <Heart className={`w-4 h-4 ${saved ? 'fill-pink-500' : ''}`} />
+                      </button>
+                    </div>
                   </div>
                 );
               })}
