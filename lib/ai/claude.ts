@@ -36,10 +36,13 @@ CRITICAL: Prioritize domain availability!
 - Mix unexpected elements to create uniqueness
 
 FOR SHORT DOMAINS (4-6 chars):
-- DO NOT use real English words (flow, peak, bold = ALL TAKEN)
-- Create MADE-UP but pronounceable names (zova, kiru, plyx, novu)
-- Use consonant-vowel patterns: CVCV (like "novu"), CVCC (like "brix")
-- These invented names are more likely available AND more brandable
+- COMMON English words are ALL TAKEN (flow, peak, bold, pure, sage = taken)
+- Instead use these strategies:
+  1. OBSCURE/RARE dictionary words (byre, froe, gawp, quay, kelp, weft, culm)
+  2. MADE-UP pronounceable names (zova, kiru, plyx, novu, brix, vela)
+  3. Foreign words from Latin, Greek, Japanese, etc (vita, nova, kaze, mori)
+- Mix these approaches for variety
+- These are more likely available AND more brandable than common words
 
 SEO BEST PRACTICES:
 - Include relevant keywords naturally when they fit the theme
