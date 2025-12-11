@@ -15,16 +15,31 @@ import { DomainDetailsModal } from '@/components/DomainDetailsModal';
 import { AdminAlert } from '@/components/AdminAlert';
 import type { DomainAnalysis } from '@/lib/ai/ranking';
 
-// Curated vibes - the best 8 for most users
-const CURATED_VIBES: { id: ThemeId; emoji: string; name: string; description: string }[] = [
-  { id: 'catchy', emoji: '🎯', name: 'Catchy', description: 'Memorable & viral' },
-  { id: 'direct', emoji: '💼', name: 'Direct', description: 'Clear & professional' },
-  { id: 'nature', emoji: '🌿', name: 'Nature', description: 'Organic & earthy' },
-  { id: 'tech', emoji: '⚡', name: 'Tech', description: 'Modern & innovative' },
-  { id: 'gen-z', emoji: '✨', name: 'Modern', description: 'Fresh & trendy' },
-  { id: 'abstract', emoji: '🎭', name: 'Creative', description: 'Unique & artistic' },
-  { id: 'ancient-greek', emoji: '🏛️', name: 'Classic', description: 'Timeless & trusted' },
-  { id: 'business', emoji: '🚀', name: 'Bold', description: 'Confident & strong' },
+// Curated vibes - organized by category
+const CURATED_VIBES: { id: ThemeId; emoji: string; name: string; description: string; category: string }[] = [
+  // Branding Styles
+  { id: 'catchy', emoji: '🎯', name: 'Catchy', description: 'Memorable & viral', category: 'style' },
+  { id: 'direct', emoji: '💼', name: 'Direct', description: 'Clear & professional', category: 'style' },
+  { id: 'tech', emoji: '⚡', name: 'Tech', description: 'Modern & innovative', category: 'style' },
+  { id: 'gen-z', emoji: '✨', name: 'Modern', description: 'Fresh & trendy', category: 'style' },
+
+  // Cultural & Mythological (evocative names like Nike, Hermes, Pandora)
+  { id: 'ancient-greek', emoji: '🏛️', name: 'Greek', description: 'Nike, Hermes, Apollo', category: 'cultural' },
+  { id: 'roman', emoji: '⚔️', name: 'Roman', description: 'Mars, Venus, Jupiter', category: 'cultural' },
+  { id: 'norse', emoji: '🪓', name: 'Norse', description: 'Thor, Odin, Valhalla', category: 'cultural' },
+  { id: 'astrology', emoji: '⭐', name: 'Astrology', description: 'Zodiac & celestial', category: 'cultural' },
+
+  // Nature & Abstract
+  { id: 'nature', emoji: '🌿', name: 'Nature', description: 'Organic & earthy', category: 'nature' },
+  { id: 'ocean', emoji: '🌊', name: 'Ocean', description: 'Waves & maritime', category: 'nature' },
+  { id: 'solar-system', emoji: '🌞', name: 'Cosmic', description: 'Space & stars', category: 'nature' },
+  { id: 'abstract', emoji: '🎭', name: 'Abstract', description: 'Conceptual & unique', category: 'nature' },
+
+  // Arts & Literature
+  { id: 'literary', emoji: '📚', name: 'Literary', description: 'Books & authors', category: 'arts' },
+  { id: 'music', emoji: '🎵', name: 'Music', description: 'Rhythm & sound', category: 'arts' },
+  { id: 'art', emoji: '🎨', name: 'Art', description: 'Visual & creative', category: 'arts' },
+  { id: 'gaming', emoji: '🎮', name: 'Gaming', description: 'Playful & action', category: 'arts' },
 ];
 
 interface DomainResult {
@@ -337,28 +352,115 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Vibe Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            {CURATED_VIBES.map((vibe) => {
-              const isSelected = selectedVibes.includes(vibe.id);
-              return (
-                <button
-                  key={vibe.id}
-                  onClick={() => toggleVibe(vibe.id)}
-                  className={`
-                    p-6 rounded-xl border-2 transition-all text-left
-                    ${isSelected
-                      ? 'border-brand-blue bg-blue-50 shadow-md scale-[1.02]'
-                      : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
-                    }
-                  `}
-                >
-                  <span className="text-3xl mb-2 block">{vibe.emoji}</span>
-                  <span className="font-bold text-gray-900 block">{vibe.name}</span>
-                  <span className="text-sm text-gray-500">{vibe.description}</span>
-                </button>
-              );
-            })}
+          {/* Vibe Grid - Organized by Category */}
+          <div className="space-y-6 mb-8">
+            {/* Branding Styles */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">Branding Style</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {CURATED_VIBES.filter(v => v.category === 'style').map((vibe) => {
+                  const isSelected = selectedVibes.includes(vibe.id);
+                  return (
+                    <button
+                      key={vibe.id}
+                      onClick={() => toggleVibe(vibe.id)}
+                      className={`
+                        p-4 rounded-xl border-2 transition-all text-left
+                        ${isSelected
+                          ? 'border-brand-blue bg-blue-50 shadow-md scale-[1.02]'
+                          : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
+                        }
+                      `}
+                    >
+                      <span className="text-2xl mb-1 block">{vibe.emoji}</span>
+                      <span className="font-bold text-gray-900 block text-sm">{vibe.name}</span>
+                      <span className="text-xs text-gray-500">{vibe.description}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Cultural & Mythological */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">Cultural & Mythology</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {CURATED_VIBES.filter(v => v.category === 'cultural').map((vibe) => {
+                  const isSelected = selectedVibes.includes(vibe.id);
+                  return (
+                    <button
+                      key={vibe.id}
+                      onClick={() => toggleVibe(vibe.id)}
+                      className={`
+                        p-4 rounded-xl border-2 transition-all text-left
+                        ${isSelected
+                          ? 'border-brand-blue bg-blue-50 shadow-md scale-[1.02]'
+                          : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
+                        }
+                      `}
+                    >
+                      <span className="text-2xl mb-1 block">{vibe.emoji}</span>
+                      <span className="font-bold text-gray-900 block text-sm">{vibe.name}</span>
+                      <span className="text-xs text-gray-500">{vibe.description}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Nature & Abstract */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">Nature & Cosmos</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {CURATED_VIBES.filter(v => v.category === 'nature').map((vibe) => {
+                  const isSelected = selectedVibes.includes(vibe.id);
+                  return (
+                    <button
+                      key={vibe.id}
+                      onClick={() => toggleVibe(vibe.id)}
+                      className={`
+                        p-4 rounded-xl border-2 transition-all text-left
+                        ${isSelected
+                          ? 'border-brand-blue bg-blue-50 shadow-md scale-[1.02]'
+                          : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
+                        }
+                      `}
+                    >
+                      <span className="text-2xl mb-1 block">{vibe.emoji}</span>
+                      <span className="font-bold text-gray-900 block text-sm">{vibe.name}</span>
+                      <span className="text-xs text-gray-500">{vibe.description}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Arts & Literature */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">Arts & Culture</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {CURATED_VIBES.filter(v => v.category === 'arts').map((vibe) => {
+                  const isSelected = selectedVibes.includes(vibe.id);
+                  return (
+                    <button
+                      key={vibe.id}
+                      onClick={() => toggleVibe(vibe.id)}
+                      className={`
+                        p-4 rounded-xl border-2 transition-all text-left
+                        ${isSelected
+                          ? 'border-brand-blue bg-blue-50 shadow-md scale-[1.02]'
+                          : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
+                        }
+                      `}
+                    >
+                      <span className="text-2xl mb-1 block">{vibe.emoji}</span>
+                      <span className="font-bold text-gray-900 block text-sm">{vibe.name}</span>
+                      <span className="text-xs text-gray-500">{vibe.description}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
           {/* TLD Selection - Always visible */}
