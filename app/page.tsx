@@ -1,46 +1,50 @@
 /**
- * 🏠 DOMAINSEEK.AI - Progressive Domain Discovery
+ * 🏠 DOMAINSEEK.AI - Single Page Domain Discovery
  *
- * Flow: Project → Vibes → Results (50 domains as cards)
- * Features: Refinement chips, persistent saves, vibe tags
+ * Features:
+ * - Search Directions: Multiple vibe combos in one search
+ * - Streaming results: Domains appear as found
+ * - Never repeat: localStorage tracks seen domains
+ * - Hover tooltip + Click modal
+ * - Persistent saves
  */
 
 'use client';
 
-import { useState, useMemo } from 'react';
-import { Sparkles, Search, Heart, ExternalLink, Loader2, ArrowRight, ChevronLeft, X, SlidersHorizontal } from 'lucide-react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { Sparkles, Search, Heart, ExternalLink, Loader2, Plus, X, SlidersHorizontal, ChevronDown } from 'lucide-react';
 import { THEMES, type ThemeId } from '@/lib/ai/themes';
 import { CharacterRangeSlider } from '@/components/CharacterRangeSlider';
 import { DomainDetailsModal } from '@/components/DomainDetailsModal';
+import { DomainTooltip } from '@/components/DomainTooltip';
 import { AdminAlert } from '@/components/AdminAlert';
+import { Tooltip } from 'react-tooltip';
 import type { DomainAnalysis } from '@/lib/ai/ranking';
 
-// Curated vibes - organized by category
-const CURATED_VIBES: { id: ThemeId; emoji: string; name: string; description: string; category: string }[] = [
-  // Branding Styles
-  { id: 'catchy', emoji: '🎯', name: 'Catchy', description: 'Memorable & viral', category: 'style' },
-  { id: 'direct', emoji: '💼', name: 'Direct', description: 'Clear & professional', category: 'style' },
-  { id: 'tech', emoji: '⚡', name: 'Tech', description: 'Modern & innovative', category: 'style' },
-  { id: 'gen-z', emoji: '✨', name: 'Modern', description: 'Fresh & trendy', category: 'style' },
-
-  // Cultural & Mythological (evocative names like Nike, Hermes, Pandora)
-  { id: 'ancient-greek', emoji: '🏛️', name: 'Greek', description: 'Nike, Hermes, Apollo', category: 'cultural' },
-  { id: 'roman', emoji: '⚔️', name: 'Roman', description: 'Mars, Venus, Jupiter', category: 'cultural' },
-  { id: 'norse', emoji: '🪓', name: 'Norse', description: 'Thor, Odin, Valhalla', category: 'cultural' },
-  { id: 'astrology', emoji: '⭐', name: 'Astrology', description: 'Zodiac & celestial', category: 'cultural' },
-
-  // Nature & Abstract
-  { id: 'nature', emoji: '🌿', name: 'Nature', description: 'Organic & earthy', category: 'nature' },
-  { id: 'ocean', emoji: '🌊', name: 'Ocean', description: 'Waves & maritime', category: 'nature' },
-  { id: 'solar-system', emoji: '🌞', name: 'Cosmic', description: 'Space & stars', category: 'nature' },
-  { id: 'abstract', emoji: '🎭', name: 'Abstract', description: 'Conceptual & unique', category: 'nature' },
-
-  // Arts & Literature
-  { id: 'literary', emoji: '📚', name: 'Literary', description: 'Books & authors', category: 'arts' },
-  { id: 'music', emoji: '🎵', name: 'Music', description: 'Rhythm & sound', category: 'arts' },
-  { id: 'art', emoji: '🎨', name: 'Art', description: 'Visual & creative', category: 'arts' },
-  { id: 'gaming', emoji: '🎮', name: 'Gaming', description: 'Playful & action', category: 'arts' },
+// Curated vibes for the chip selector
+const VIBE_CHIPS: { id: ThemeId; emoji: string; name: string }[] = [
+  { id: 'catchy', emoji: '🎯', name: 'Catchy' },
+  { id: 'direct', emoji: '💼', name: 'Direct' },
+  { id: 'nature', emoji: '🌿', name: 'Nature' },
+  { id: 'tech', emoji: '⚡', name: 'Tech' },
+  { id: 'gen-z', emoji: '✨', name: 'Modern' },
+  { id: 'ancient-greek', emoji: '🏛️', name: 'Greek' },
+  { id: 'roman', emoji: '⚔️', name: 'Roman' },
+  { id: 'norse', emoji: '🪓', name: 'Norse' },
+  { id: 'astrology', emoji: '⭐', name: 'Astrology' },
+  { id: 'ocean', emoji: '🌊', name: 'Ocean' },
+  { id: 'solar-system', emoji: '🌞', name: 'Cosmic' },
+  { id: 'abstract', emoji: '🎭', name: 'Abstract' },
+  { id: 'literary', emoji: '📚', name: 'Literary' },
+  { id: 'music', emoji: '🎵', name: 'Music' },
+  { id: 'art', emoji: '🎨', name: 'Art' },
+  { id: 'gaming', emoji: '🎮', name: 'Gaming' },
 ];
+
+interface SearchDirection {
+  id: string;
+  vibes: ThemeId[];
+}
 
 interface DomainResult {
   domain: string;
@@ -50,47 +54,105 @@ interface DomainResult {
   analysis?: DomainAnalysis;
   previouslyRegistered?: boolean;
   lastSnapshot?: string;
-  vibeId: ThemeId; // Which vibe generated this domain
+  directionId: string;
+  directionVibes: ThemeId[];
 }
 
-type Step = 'project' | 'vibes' | 'results';
+// Helper to get vibe display info
+const getVibeInfo = (vibeId: ThemeId) => {
+  const chip = VIBE_CHIPS.find(v => v.id === vibeId);
+  if (chip) return chip;
+  const theme = THEMES[vibeId];
+  return { id: vibeId, emoji: theme.emoji, name: theme.name };
+};
+
+// Format direction for display
+const formatDirection = (vibes: ThemeId[]) => {
+  return vibes.map(v => getVibeInfo(v).emoji).join('+');
+};
+
+const formatDirectionFull = (vibes: ThemeId[]) => {
+  return vibes.map(v => `${getVibeInfo(v).emoji} ${getVibeInfo(v).name}`).join(' + ');
+};
 
 export default function HomePage() {
-  // Step management
-  const [step, setStep] = useState<Step>('project');
-
-  // User inputs
+  // Project input
   const [project, setProject] = useState('');
-  const [selectedVibes, setSelectedVibes] = useState<ThemeId[]>([]);
+
+  // Search directions
+  const [directions, setDirections] = useState<SearchDirection[]>([]);
+  const [buildingVibes, setBuildingVibes] = useState<ThemeId[]>([]);
+
+  // Settings
   const [selectedTLDs, setSelectedTLDs] = useState<string[]>(['com', 'ai']);
   const [charRange, setCharRange] = useState<[number, number]>([4, 12]);
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   // Results
   const [domains, setDomains] = useState<DomainResult[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generatingDirections, setGeneratingDirections] = useState<Set<string>>(new Set());
+
+  // Seen domains (localStorage)
+  const [seenDomains, setSeenDomains] = useState<Set<string>>(new Set());
+
+  // Saved domains
   const [savedDomains, setSavedDomains] = useState<DomainResult[]>([]);
 
-  // Filters (for refinement chips)
+  // Filters
   const [activeFilters, setActiveFilters] = useState<{
     maxLength?: number;
-    vibeFilter?: ThemeId;
+    directionId?: string;
     tldFilter?: string;
   }>({});
 
   // Modal state
   const [selectedDomain, setSelectedDomain] = useState<DomainResult | null>(null);
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
+  const [hoveredDomain, setHoveredDomain] = useState<string | null>(null);
 
-  // Filter domains based on active filters
+  // Load seen/saved domains from localStorage on mount
+  useEffect(() => {
+    const seen = localStorage.getItem('domainseek_seen');
+    if (seen) {
+      try {
+        setSeenDomains(new Set(JSON.parse(seen)));
+      } catch (e) {
+        console.warn('Failed to parse seen domains:', e);
+      }
+    }
+
+    const saved = localStorage.getItem('domainseek_saved');
+    if (saved) {
+      try {
+        setSavedDomains(JSON.parse(saved));
+      } catch (e) {
+        console.warn('Failed to parse saved domains:', e);
+      }
+    }
+  }, []);
+
+  // Save to localStorage when seenDomains changes
+  useEffect(() => {
+    if (seenDomains.size > 0) {
+      localStorage.setItem('domainseek_seen', JSON.stringify(Array.from(seenDomains)));
+    }
+  }, [seenDomains]);
+
+  // Save to localStorage when savedDomains changes
+  useEffect(() => {
+    localStorage.setItem('domainseek_saved', JSON.stringify(savedDomains));
+  }, [savedDomains]);
+
+  // Filter domains
   const filteredDomains = useMemo(() => {
     let result = domains;
 
     if (activeFilters.maxLength) {
       result = result.filter(d => d.domain.split('.')[0].length <= activeFilters.maxLength!);
     }
-    if (activeFilters.vibeFilter) {
-      result = result.filter(d => d.vibeId === activeFilters.vibeFilter);
+    if (activeFilters.directionId) {
+      result = result.filter(d => d.directionId === activeFilters.directionId);
     }
     if (activeFilters.tldFilter) {
       result = result.filter(d => d.domain.endsWith(`.${activeFilters.tldFilter}`));
@@ -99,14 +161,34 @@ export default function HomePage() {
     return result;
   }, [domains, activeFilters]);
 
-  const toggleVibe = (vibeId: ThemeId) => {
-    setSelectedVibes(prev =>
+  // Toggle vibe in building direction
+  const toggleBuildingVibe = (vibeId: ThemeId) => {
+    setBuildingVibes(prev =>
       prev.includes(vibeId)
-        ? prev.filter(id => id !== vibeId)
+        ? prev.filter(v => v !== vibeId)
         : [...prev, vibeId]
     );
   };
 
+  // Add current building vibes as a new direction
+  const addDirection = () => {
+    if (buildingVibes.length === 0) return;
+
+    const newDirection: SearchDirection = {
+      id: `dir-${Date.now()}`,
+      vibes: [...buildingVibes],
+    };
+
+    setDirections(prev => [...prev, newDirection]);
+    setBuildingVibes([]);
+  };
+
+  // Remove a direction
+  const removeDirection = (directionId: string) => {
+    setDirections(prev => prev.filter(d => d.id !== directionId));
+  };
+
+  // Toggle save domain
   const toggleSave = (domain: DomainResult) => {
     setSavedDomains(prev => {
       const exists = prev.some(d => d.domain === domain.domain);
@@ -119,95 +201,135 @@ export default function HomePage() {
 
   const isSaved = (domain: string) => savedDomains.some(d => d.domain === domain);
 
-  const generateDomains = async () => {
-    if (selectedVibes.length === 0 || !project.trim()) return;
-
-    setIsGenerating(true);
-    setDomains([]);
-    setActiveFilters({});
-
+  // Generate domains for a single direction
+  const generateForDirection = useCallback(async (direction: SearchDirection, existingDomains: Set<string>) => {
     try {
-      // Generate for each selected vibe
-      const allDomains: DomainResult[] = [];
-
-      for (const vibeId of selectedVibes) {
-        const response = await fetch('/api/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            project,
-            themes: [vibeId],
-            countPerTheme: Math.ceil(50 / selectedVibes.length), // Distribute across vibes
-            charMin: charRange[0],
-            charMax: charRange[1],
-            tlds: selectedTLDs,
-          }),
-        });
-
-        const data = await response.json();
-
-        if (data.success && data.data?.themes) {
-          const themeDomains = Object.values(data.data.themes).flat() as DomainResult[];
-          const available = themeDomains
-            .filter((d) => d.available && d.confidence >= 0.95)
-            .map((d) => ({
-              ...d,
-              vibeId,
-            }));
-          allDomains.push(...available);
-        }
-      }
-
-      // Remove duplicates and sort by score (if available) or alphabetically
-      const uniqueDomains = allDomains.filter(
-        (d, i, arr) => arr.findIndex(x => x.domain === d.domain) === i
-      );
-
-      // Get AI analysis for all domains
-      if (uniqueDomains.length > 0) {
-        try {
-          const analysisResponse = await fetch('/api/analyze', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              domains: uniqueDomains.map(d => d.domain),
-              project,
-            }),
-          });
-
-          const analysisData = await analysisResponse.json();
-
-          if (analysisData.success && analysisData.analyses) {
-            uniqueDomains.forEach(domain => {
-              const analysis = analysisData.analyses.find(
-                (a: DomainAnalysis) => a.domain === domain.domain
-              );
-              if (analysis) {
-                domain.analysis = analysis;
-              }
-            });
-          }
-        } catch (error) {
-          console.warn('Analysis failed:', error);
-        }
-      }
-
-      // Sort by score descending
-      uniqueDomains.sort((a, b) => {
-        const scoreA = a.analysis?.overallScore || 0;
-        const scoreB = b.analysis?.overallScore || 0;
-        return scoreB - scoreA;
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project,
+          themes: direction.vibes,
+          countPerTheme: 25,
+          charMin: charRange[0],
+          charMax: charRange[1],
+          tlds: selectedTLDs,
+        }),
       });
 
-      setDomains(uniqueDomains);
-      setStep('results');
+      const data = await response.json();
+
+      if (data.success && data.data?.themes) {
+        const themeDomains = Object.values(data.data.themes).flat() as DomainResult[];
+        const available = themeDomains
+          .filter(d => d.available && d.confidence >= 0.95)
+          .filter(d => !existingDomains.has(d.domain) && !seenDomains.has(d.domain))
+          .map(d => ({
+            ...d,
+            directionId: direction.id,
+            directionVibes: direction.vibes,
+          }));
+
+        return available;
+      }
     } catch (error) {
-      console.error('Generation error:', error);
-    } finally {
-      setIsGenerating(false);
+      console.error(`Generation error for direction ${direction.id}:`, error);
     }
+
+    return [];
+  }, [project, charRange, selectedTLDs, seenDomains]);
+
+  // Get AI analysis for domains
+  const getAnalysis = useCallback(async (domainsToAnalyze: DomainResult[]) => {
+    if (domainsToAnalyze.length === 0) return domainsToAnalyze;
+
+    try {
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          domains: domainsToAnalyze.map(d => d.domain),
+          project,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.analyses) {
+        domainsToAnalyze.forEach(domain => {
+          const analysis = data.analyses.find((a: DomainAnalysis) => a.domain === domain.domain);
+          if (analysis) {
+            domain.analysis = analysis;
+          }
+        });
+      }
+    } catch (error) {
+      console.warn('Analysis failed:', error);
+    }
+
+    return domainsToAnalyze;
+  }, [project]);
+
+  // Main generate function - runs all directions in parallel, streams results
+  const generateDomains = async (append = false) => {
+    if (directions.length === 0 || !project.trim()) return;
+
+    setIsGenerating(true);
+    if (!append) {
+      setDomains([]);
+      setActiveFilters({});
+    }
+
+    const existingDomains = new Set(domains.map(d => d.domain));
+
+    // Track which directions are generating
+    setGeneratingDirections(new Set(directions.map(d => d.id)));
+
+    // Run all directions in parallel
+    const results = await Promise.all(
+      directions.map(async (direction) => {
+        const directionDomains = await generateForDirection(direction, existingDomains);
+
+        // Add to existing domains set to prevent duplicates across directions
+        directionDomains.forEach(d => existingDomains.add(d.domain));
+
+        // Get analysis
+        const analyzed = await getAnalysis(directionDomains);
+
+        // Update state immediately (streaming effect)
+        setDomains(prev => {
+          const newDomains = [...prev, ...analyzed];
+          // Sort by score
+          newDomains.sort((a, b) => {
+            const scoreA = a.analysis?.overallScore || 0;
+            const scoreB = b.analysis?.overallScore || 0;
+            return scoreB - scoreA;
+          });
+          return newDomains;
+        });
+
+        // Mark direction as done
+        setGeneratingDirections(prev => {
+          const next = new Set(prev);
+          next.delete(direction.id);
+          return next;
+        });
+
+        // Add to seen domains
+        setSeenDomains(prev => {
+          const next = new Set(prev);
+          analyzed.forEach(d => next.add(d.domain));
+          return next;
+        });
+
+        return analyzed;
+      })
+    );
+
+    setIsGenerating(false);
   };
 
+  // Handle domain click for modal
   const handleDomainClick = async (domainResult: DomainResult) => {
     if (domainResult.analysis) {
       setSelectedDomain(domainResult);
@@ -239,14 +361,8 @@ export default function HomePage() {
     }
   };
 
-  const getVibeInfo = (vibeId: ThemeId) => {
-    const curated = CURATED_VIBES.find(v => v.id === vibeId);
-    if (curated) return curated;
-    const theme = THEMES[vibeId];
-    return { id: vibeId, emoji: theme.emoji, name: theme.name, description: theme.description };
-  };
-
-  const toggleFilter = (filterType: 'maxLength' | 'vibeFilter' | 'tldFilter', value: number | ThemeId | string) => {
+  // Toggle filter
+  const toggleFilter = (filterType: 'maxLength' | 'directionId' | 'tldFilter', value: number | string) => {
     setActiveFilters(prev => {
       if (prev[filterType] === value) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -257,277 +373,171 @@ export default function HomePage() {
     });
   };
 
-  // STEP 1: Project Input
-  if (step === 'project') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center p-6">
-        <AdminAlert />
-        <div className="w-full max-w-2xl">
-          <div className="text-center mb-12">
-            <h1 className="text-5xl font-bold text-gray-900 mb-4 font-display">
-              Find Your Perfect{' '}
-              <span className="bg-gradient-to-r from-brand-blue to-brand-violet bg-clip-text text-transparent">
-                Domain
-              </span>
-            </h1>
-            <p className="text-xl text-gray-600">AI-powered domain discovery in seconds</p>
-          </div>
+  // Get unique directions from results for filter chips
+  const resultDirections = useMemo(() => {
+    const dirs = new Map<string, ThemeId[]>();
+    domains.forEach(d => {
+      if (!dirs.has(d.directionId)) {
+        dirs.set(d.directionId, d.directionVibes);
+      }
+    });
+    return dirs;
+  }, [domains]);
 
-          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-200">
-            <label className="block text-lg font-semibold text-gray-900 mb-3">
-              What are you building?
-            </label>
-            <div className="relative mb-6">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                value={project}
-                onChange={(e) => setProject(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && project.trim() && setStep('vibes')}
-                placeholder="e.g., coffee subscription startup"
-                className="w-full pl-12 pr-4 py-4 border-2 border-gray-300 rounded-xl focus:border-brand-blue focus:ring-4 focus:ring-blue-50 outline-none text-lg"
-                autoFocus
-              />
-            </div>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      <AdminAlert />
 
-            <div className="flex flex-wrap gap-2 mb-8">
-              <span className="text-sm text-gray-500">Try:</span>
-              {['yoga studio', 'tech consulting', 'meal prep service', 'fitness app'].map((ex) => (
-                <button
-                  key={ex}
-                  onClick={() => setProject(ex)}
-                  className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-700 transition-colors"
-                >
-                  {ex}
-                </button>
-              ))}
-            </div>
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-6 py-4">
+          <h1 className="text-2xl font-bold text-gray-900">
+            Domain<span className="text-brand-blue">Seek</span>
+          </h1>
+        </div>
+      </header>
 
-            <button
-              onClick={() => setStep('vibes')}
-              disabled={!project.trim()}
-              className={`
-                w-full py-4 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-3
-                ${project.trim()
-                  ? 'bg-gradient-to-r from-brand-blue to-brand-violet text-white hover:shadow-lg hover:scale-[1.02]'
-                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                }
-              `}
-            >
-              Next
-              <ArrowRight className="w-5 h-5" />
-            </button>
+      <main className="max-w-6xl mx-auto px-6 py-8">
+        {/* Project Input */}
+        <div className="mb-8">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            What are you building?
+          </label>
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              value={project}
+              onChange={(e) => setProject(e.target.value)}
+              placeholder="e.g., coffee subscription startup"
+              className="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:border-brand-blue focus:ring-4 focus:ring-blue-50 outline-none text-base"
+            />
           </div>
         </div>
-      </div>
-    );
-  }
 
-  // STEP 2: Vibe Selection
-  if (step === 'vibes') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-6">
-        <AdminAlert />
-        <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="flex items-center gap-4 mb-8">
-            <button
-              onClick={() => setStep('project')}
-              className="p-2 hover:bg-white rounded-lg transition-colors"
-            >
-              <ChevronLeft className="w-6 h-6 text-gray-600" />
-            </button>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 text-gray-600 text-sm mb-1">
-                <span className="w-6 h-6 rounded-full bg-brand-blue text-white flex items-center justify-center text-xs font-bold">✓</span>
-                <span className="truncate max-w-md">{project}</span>
-                <button
-                  onClick={() => setStep('project')}
-                  className="text-brand-blue hover:underline text-xs"
-                >
-                  Edit
-                </button>
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900">What vibe are you going for?</h2>
-            </div>
-          </div>
-
-          {/* Vibe Grid - Organized by Category */}
-          <div className="space-y-6 mb-8">
-            {/* Branding Styles */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">Branding Style</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {CURATED_VIBES.filter(v => v.category === 'style').map((vibe) => {
-                  const isSelected = selectedVibes.includes(vibe.id);
-                  return (
-                    <button
-                      key={vibe.id}
-                      onClick={() => toggleVibe(vibe.id)}
-                      className={`
-                        p-4 rounded-xl border-2 transition-all text-left
-                        ${isSelected
-                          ? 'border-brand-blue bg-blue-50 shadow-md scale-[1.02]'
-                          : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
-                        }
-                      `}
-                    >
-                      <span className="text-2xl mb-1 block">{vibe.emoji}</span>
-                      <span className="font-bold text-gray-900 block text-sm">{vibe.name}</span>
-                      <span className="text-xs text-gray-500">{vibe.description}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Cultural & Mythological */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">Cultural & Mythology</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {CURATED_VIBES.filter(v => v.category === 'cultural').map((vibe) => {
-                  const isSelected = selectedVibes.includes(vibe.id);
-                  return (
-                    <button
-                      key={vibe.id}
-                      onClick={() => toggleVibe(vibe.id)}
-                      className={`
-                        p-4 rounded-xl border-2 transition-all text-left
-                        ${isSelected
-                          ? 'border-brand-blue bg-blue-50 shadow-md scale-[1.02]'
-                          : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
-                        }
-                      `}
-                    >
-                      <span className="text-2xl mb-1 block">{vibe.emoji}</span>
-                      <span className="font-bold text-gray-900 block text-sm">{vibe.name}</span>
-                      <span className="text-xs text-gray-500">{vibe.description}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Nature & Abstract */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">Nature & Cosmos</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {CURATED_VIBES.filter(v => v.category === 'nature').map((vibe) => {
-                  const isSelected = selectedVibes.includes(vibe.id);
-                  return (
-                    <button
-                      key={vibe.id}
-                      onClick={() => toggleVibe(vibe.id)}
-                      className={`
-                        p-4 rounded-xl border-2 transition-all text-left
-                        ${isSelected
-                          ? 'border-brand-blue bg-blue-50 shadow-md scale-[1.02]'
-                          : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
-                        }
-                      `}
-                    >
-                      <span className="text-2xl mb-1 block">{vibe.emoji}</span>
-                      <span className="font-bold text-gray-900 block text-sm">{vibe.name}</span>
-                      <span className="text-xs text-gray-500">{vibe.description}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Arts & Literature */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">Arts & Culture</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {CURATED_VIBES.filter(v => v.category === 'arts').map((vibe) => {
-                  const isSelected = selectedVibes.includes(vibe.id);
-                  return (
-                    <button
-                      key={vibe.id}
-                      onClick={() => toggleVibe(vibe.id)}
-                      className={`
-                        p-4 rounded-xl border-2 transition-all text-left
-                        ${isSelected
-                          ? 'border-brand-blue bg-blue-50 shadow-md scale-[1.02]'
-                          : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
-                        }
-                      `}
-                    >
-                      <span className="text-2xl mb-1 block">{vibe.emoji}</span>
-                      <span className="font-bold text-gray-900 block text-sm">{vibe.name}</span>
-                      <span className="text-xs text-gray-500">{vibe.description}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* TLD Selection - Always visible */}
-          <div className="mb-6 p-6 bg-white rounded-xl border border-gray-200">
-            <label className="block text-sm font-semibold text-gray-700 mb-3">Which extensions do you want?</label>
-            <div className="flex flex-wrap gap-3">
-              {[
-                { tld: 'com', price: '$13', desc: 'Most trusted' },
-                { tld: 'ai', price: '$70', desc: 'Tech/AI focused' },
-                { tld: 'io', price: '$35', desc: 'Startups' },
-                { tld: 'app', price: '$15', desc: 'Mobile apps' },
-                { tld: 'dev', price: '$13', desc: 'Developers' },
-              ].map(({ tld, price, desc }) => (
-                <button
-                  key={tld}
-                  onClick={() => setSelectedTLDs(prev =>
-                    prev.includes(tld)
-                      ? prev.length > 1 ? prev.filter(t => t !== tld) : prev // Keep at least one
-                      : [...prev, tld]
-                  )}
-                  className={`
-                    px-4 py-3 rounded-xl border-2 text-left transition-all min-w-[100px]
-                    ${selectedTLDs.includes(tld)
-                      ? 'border-brand-blue bg-blue-50'
-                      : 'border-gray-200 bg-white hover:border-gray-300'
-                    }
-                  `}
-                >
-                  <span className={`font-mono font-bold block ${selectedTLDs.includes(tld) ? 'text-brand-blue' : 'text-gray-900'}`}>
-                    .{tld}
-                  </span>
-                  <span className="text-xs text-gray-500">{price} · {desc}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Advanced Settings Toggle */}
-          <div className="mb-8">
-            <button
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              <SlidersHorizontal className="w-4 h-4" />
-              <span className="text-sm font-medium">More options</span>
-              <span className="text-xs text-gray-400">{showAdvanced ? '▲' : '▼'}</span>
-            </button>
-
-            {showAdvanced && (
-              <div className="mt-4 p-6 bg-white rounded-xl border border-gray-200">
-                <CharacterRangeSlider
-                  min={3}
-                  max={15}
-                  value={charRange}
-                  onChange={setCharRange}
-                />
-              </div>
+        {/* Search Directions */}
+        <div className="mb-6 p-6 bg-white rounded-xl border border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-gray-900">Search Directions</h2>
+            {buildingVibes.length > 0 && (
+              <button
+                onClick={addDirection}
+                className="flex items-center gap-2 px-3 py-1.5 bg-brand-blue text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Add Direction
+              </button>
             )}
           </div>
 
+          {/* Existing Directions */}
+          {directions.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {directions.map((dir) => (
+                <div
+                  key={dir.id}
+                  className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg"
+                >
+                  <span className="text-sm font-medium">
+                    {formatDirectionFull(dir.vibes)}
+                  </span>
+                  <button
+                    onClick={() => removeDirection(dir.id)}
+                    className="text-gray-400 hover:text-red-500 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Building Direction Preview */}
+          {buildingVibes.length > 0 && (
+            <div className="flex items-center gap-2 mb-4 p-3 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+              <span className="text-sm text-gray-500">Building:</span>
+              <span className="text-sm font-medium">
+                {formatDirectionFull(buildingVibes)}
+              </span>
+            </div>
+          )}
+
+          {/* Vibe Chips */}
+          <div className="flex flex-wrap gap-2">
+            {VIBE_CHIPS.map((vibe) => {
+              const isSelected = buildingVibes.includes(vibe.id);
+              return (
+                <button
+                  key={vibe.id}
+                  onClick={() => toggleBuildingVibe(vibe.id)}
+                  className={`
+                    px-3 py-2 rounded-lg border text-sm font-medium transition-all
+                    ${isSelected
+                      ? 'border-brand-blue bg-blue-50 text-brand-blue'
+                      : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                    }
+                  `}
+                >
+                  {vibe.emoji} {vibe.name}
+                </button>
+              );
+            })}
+          </div>
+
+          {directions.length === 0 && buildingVibes.length === 0 && (
+            <p className="text-sm text-gray-500 mt-3">
+              Click vibes to build a search direction, then click "Add Direction"
+            </p>
+          )}
+        </div>
+
+        {/* Settings Row */}
+        <div className="mb-6 flex items-center gap-4">
+          {/* TLDs */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">TLDs:</span>
+            {[
+              { tld: 'com', price: '$13' },
+              { tld: 'ai', price: '$70' },
+              { tld: 'io', price: '$35' },
+            ].map(({ tld, price }) => (
+              <button
+                key={tld}
+                onClick={() => setSelectedTLDs(prev =>
+                  prev.includes(tld)
+                    ? prev.length > 1 ? prev.filter(t => t !== tld) : prev
+                    : [...prev, tld]
+                )}
+                className={`
+                  px-2 py-1 rounded text-xs font-mono transition-all
+                  ${selectedTLDs.includes(tld)
+                    ? 'bg-brand-blue text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }
+                `}
+              >
+                .{tld}
+              </button>
+            ))}
+          </div>
+
+          {/* More Settings Toggle */}
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            More
+            <ChevronDown className={`w-3 h-3 transition-transform ${showSettings ? 'rotate-180' : ''}`} />
+          </button>
+
           {/* Generate Button */}
           <button
-            onClick={generateDomains}
-            disabled={selectedVibes.length === 0 || isGenerating}
+            onClick={() => generateDomains(false)}
+            disabled={directions.length === 0 || !project.trim() || isGenerating}
             className={`
-              w-full py-4 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-3
-              ${selectedVibes.length > 0 && !isGenerating
+              ml-auto px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2
+              ${directions.length > 0 && project.trim() && !isGenerating
                 ? 'bg-gradient-to-r from-brand-blue to-brand-violet text-white hover:shadow-lg hover:scale-[1.02]'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }
@@ -535,215 +545,152 @@ export default function HomePage() {
           >
             {isGenerating ? (
               <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Finding domains...
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Generating...
               </>
             ) : (
               <>
-                <Sparkles className="w-5 h-5" />
-                Show me domains
-                <ArrowRight className="w-5 h-5" />
+                <Sparkles className="w-4 h-4" />
+                Generate Domains
               </>
             )}
           </button>
-
-          {selectedVibes.length > 0 && (
-            <p className="text-center text-sm text-gray-500 mt-3">
-              {selectedVibes.length} vibe{selectedVibes.length !== 1 ? 's' : ''} selected:{' '}
-              {selectedVibes.map(v => getVibeInfo(v).emoji).join(' ')}
-            </p>
-          )}
         </div>
-      </div>
-    );
-  }
 
-  // STEP 3: Results
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      <AdminAlert />
-
-      {/* Sticky Header */}
-      <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setStep('vibes')}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <ChevronLeft className="w-5 h-5 text-gray-600" />
-              </button>
-              <div>
-                <p className="text-sm text-gray-500 truncate max-w-xs">{project}</p>
-                <p className="font-semibold text-gray-900">
-                  {selectedVibes.map(v => getVibeInfo(v).emoji).join(' ')} {selectedVibes.map(v => getVibeInfo(v).name).join(', ')}
-                  <button
-                    onClick={() => setStep('vibes')}
-                    className="text-brand-blue hover:underline text-sm ml-2"
-                  >
-                    Change
-                  </button>
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              {savedDomains.length > 0 && (
-                <div className="flex items-center gap-2 px-4 py-2 bg-pink-50 rounded-lg border border-pink-200">
-                  <Heart className="w-4 h-4 text-pink-500 fill-pink-500" />
-                  <span className="text-sm font-medium text-pink-700">{savedDomains.length} saved</span>
-                </div>
-              )}
-              <button
-                onClick={generateDomains}
-                disabled={isGenerating}
-                className="px-4 py-2 bg-brand-blue text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2 text-sm font-medium"
-              >
-                {isGenerating ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Sparkles className="w-4 h-4" />
-                )}
-                Different ones
-              </button>
-            </div>
+        {/* Expanded Settings */}
+        {showSettings && (
+          <div className="mb-6 p-4 bg-white rounded-xl border border-gray-200">
+            <CharacterRangeSlider
+              min={3}
+              max={15}
+              value={charRange}
+              onChange={setCharRange}
+            />
           </div>
-        </div>
-      </div>
+        )}
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        {/* Results Count & Filters */}
-        <div className="flex items-center justify-between mb-6">
-          <p className="text-gray-600">
-            <span className="font-bold text-gray-900">{filteredDomains.length}</span>
-            {filteredDomains.length !== domains.length && (
-              <span className="text-gray-500"> of {domains.length}</span>
-            )}
-            {' '}domains found
-          </p>
+        {/* Results Section */}
+        {(domains.length > 0 || isGenerating) && (
+          <>
+            {/* Results Header */}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-gray-600">
+                <span className="font-bold text-gray-900">{filteredDomains.length}</span>
+                {filteredDomains.length !== domains.length && (
+                  <span className="text-gray-500"> of {domains.length}</span>
+                )}
+                {' '}domains found
+                {generatingDirections.size > 0 && (
+                  <span className="text-brand-blue ml-2">
+                    <Loader2 className="w-4 h-4 animate-spin inline mr-1" />
+                    Loading more...
+                  </span>
+                )}
+              </p>
+            </div>
 
-          {/* Refinement Chips */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm text-gray-500">Refine:</span>
+            {/* Refinement Chips */}
+            {domains.length > 0 && (
+              <div className="flex items-center gap-2 flex-wrap mb-6">
+                <span className="text-sm text-gray-500">Refine:</span>
 
-            {/* Length filters */}
-            <button
-              onClick={() => toggleFilter('maxLength', 6)}
-              className={`px-3 py-1.5 rounded-full text-sm transition-all ${
-                activeFilters.maxLength === 6
-                  ? 'bg-brand-blue text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Short (≤6)
-            </button>
-            <button
-              onClick={() => toggleFilter('maxLength', 8)}
-              className={`px-3 py-1.5 rounded-full text-sm transition-all ${
-                activeFilters.maxLength === 8
-                  ? 'bg-brand-blue text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Medium (≤8)
-            </button>
-
-            {/* TLD filters */}
-            {selectedTLDs.map(tld => (
-              <button
-                key={tld}
-                onClick={() => toggleFilter('tldFilter', tld)}
-                className={`px-3 py-1.5 rounded-full text-sm font-mono transition-all ${
-                  activeFilters.tldFilter === tld
-                    ? 'bg-brand-blue text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                .{tld}
-              </button>
-            ))}
-
-            {/* Vibe filters */}
-            {selectedVibes.map(vibeId => {
-              const vibe = getVibeInfo(vibeId);
-              return (
                 <button
-                  key={vibeId}
-                  onClick={() => toggleFilter('vibeFilter', vibeId)}
+                  onClick={() => toggleFilter('maxLength', 6)}
                   className={`px-3 py-1.5 rounded-full text-sm transition-all ${
-                    activeFilters.vibeFilter === vibeId
+                    activeFilters.maxLength === 6
                       ? 'bg-brand-blue text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
-                  {vibe.emoji} {vibe.name}
+                  Short (≤6)
                 </button>
-              );
-            })}
 
-            {/* Clear filters */}
-            {Object.keys(activeFilters).length > 0 && (
-              <button
-                onClick={() => setActiveFilters({})}
-                className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700"
-              >
-                Clear all
-              </button>
+                {selectedTLDs.map(tld => (
+                  <button
+                    key={tld}
+                    onClick={() => toggleFilter('tldFilter', tld)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-mono transition-all ${
+                      activeFilters.tldFilter === tld
+                        ? 'bg-brand-blue text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    .{tld}
+                  </button>
+                ))}
+
+                {Array.from(resultDirections.entries()).map(([dirId, vibes]) => (
+                  <button
+                    key={dirId}
+                    onClick={() => toggleFilter('directionId', dirId)}
+                    className={`px-3 py-1.5 rounded-full text-sm transition-all ${
+                      activeFilters.directionId === dirId
+                        ? 'bg-brand-blue text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {formatDirection(vibes)}
+                  </button>
+                ))}
+
+                {Object.keys(activeFilters).length > 0 && (
+                  <button
+                    onClick={() => setActiveFilters({})}
+                    className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
             )}
-          </div>
-        </div>
 
-        {/* Domain Grid */}
-        {isGenerating ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="w-12 h-12 animate-spin text-brand-blue mb-4" />
-            <p className="text-gray-600">Finding perfect domains...</p>
-          </div>
-        ) : filteredDomains.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {filteredDomains.map((domain) => {
-              const vibe = getVibeInfo(domain.vibeId);
-              const saved = isSaved(domain.domain);
+            {/* Domain Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+              {filteredDomains.map((domain) => {
+                const saved = isSaved(domain.domain);
 
-              return (
-                <div
-                  key={domain.domain}
-                  className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-lg hover:border-brand-blue/50 transition-all group cursor-pointer"
-                  onClick={() => handleDomainClick(domain)}
-                >
-                  {/* Domain Name */}
-                  <div className="font-mono font-bold text-gray-900 mb-2 truncate group-hover:text-brand-blue transition-colors">
-                    {domain.domain}
-                  </div>
+                return (
+                  <div
+                    key={domain.domain}
+                    data-tooltip-id={`tooltip-${domain.domain}`}
+                    className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-lg hover:border-brand-blue/50 transition-all group cursor-pointer"
+                    onClick={() => handleDomainClick(domain)}
+                    onMouseEnter={() => setHoveredDomain(domain.domain)}
+                    onMouseLeave={() => setHoveredDomain(null)}
+                  >
+                    {/* Domain Name */}
+                    <div className="font-mono font-bold text-gray-900 mb-2 truncate group-hover:text-brand-blue transition-colors">
+                      {domain.domain}
+                    </div>
 
-                  {/* Score & Vibe Tag */}
-                  <div className="flex items-center gap-2 mb-3">
-                    {domain.analysis && (
-                      <span className="text-sm font-bold text-brand-blue">
-                        {domain.analysis.overallScore.toFixed(1)}
+                    {/* Score & Direction Tag */}
+                    <div className="flex items-center gap-2 mb-3">
+                      {domain.analysis && (
+                        <span className="text-lg font-bold text-brand-blue">
+                          {domain.analysis.overallScore.toFixed(1)}
+                        </span>
+                      )}
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                        {formatDirection(domain.directionVibes)}
                       </span>
-                    )}
-                    <span
-                      className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600"
-                      title={vibe.name}
-                    >
-                      {vibe.emoji}
-                    </span>
-                    {domain.previouslyRegistered && (
-                      <span
-                        className="text-xs px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded"
-                        title={`Previously registered${domain.lastSnapshot ? ` (${domain.lastSnapshot})` : ''}`}
+                      {domain.previouslyRegistered && (
+                        <span className="text-xs px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded">
+                          ♻️
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Price & Actions */}
+                    <div className="flex items-center justify-between">
+                      <a
+                        href={`https://www.namecheap.com/domains/registration/results/?domain=${domain.domain}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="px-3 py-1.5 bg-gradient-to-r from-brand-blue to-brand-violet text-white text-sm font-bold rounded-lg hover:shadow-md transition-all"
                       >
-                        ♻️
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Price & Actions */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-500">${domain.price || 13}</span>
-                    <div className="flex items-center gap-1">
+                        ${domain.price || 13} →
+                      </a>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -755,45 +702,48 @@ export default function HomePage() {
                             : 'text-gray-400 hover:text-pink-500 hover:bg-pink-50'
                         }`}
                       >
-                        <Heart className={`w-4 h-4 ${saved ? 'fill-pink-500' : ''}`} />
+                        <Heart className={`w-5 h-5 ${saved ? 'fill-pink-500' : ''}`} />
                       </button>
-                      <a
-                        href={`https://www.namecheap.com/domains/registration/results/?domain=${domain.domain}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="p-2 text-gray-400 hover:text-brand-blue hover:bg-blue-50 rounded-lg transition-colors"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
                     </div>
+
+                    {/* Hover Tooltip */}
+                    {hoveredDomain === domain.domain && domain.analysis && (
+                      <Tooltip
+                        id={`tooltip-${domain.domain}`}
+                        place="top"
+                        className="!p-0 !opacity-100 !bg-transparent !border-0 z-50"
+                      >
+                        <DomainTooltip
+                          domain={domain.domain}
+                          analysis={domain.analysis}
+                        />
+                      </Tooltip>
+                    )}
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="text-center py-20">
-            <p className="text-gray-500 mb-4">No domains match your filters</p>
-            <button
-              onClick={() => setActiveFilters({})}
-              className="text-brand-blue hover:underline"
-            >
-              Clear filters
-            </button>
-          </div>
+                );
+              })}
+            </div>
+
+            {/* Load More */}
+            {domains.length > 0 && !isGenerating && (
+              <div className="text-center">
+                <button
+                  onClick={() => generateDomains(true)}
+                  className="px-6 py-3 bg-white border border-gray-300 rounded-xl text-gray-700 hover:border-brand-blue hover:text-brand-blue transition-colors"
+                >
+                  Load More Domains
+                </button>
+              </div>
+            )}
+          </>
         )}
 
-        {/* Load More */}
-        {filteredDomains.length > 0 && filteredDomains.length === domains.length && (
-          <div className="text-center mt-8">
-            <button
-              onClick={generateDomains}
-              disabled={isGenerating}
-              className="px-6 py-3 bg-white border border-gray-300 rounded-xl text-gray-700 hover:border-brand-blue hover:text-brand-blue transition-colors"
-            >
-              Load more domains
-            </button>
+        {/* Empty State */}
+        {domains.length === 0 && !isGenerating && (
+          <div className="text-center py-16 text-gray-500">
+            <Sparkles className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+            <p className="text-lg font-medium mb-2">Ready to find your perfect domain</p>
+            <p className="text-sm">Add search directions above and click Generate</p>
           </div>
         )}
       </main>
@@ -801,7 +751,7 @@ export default function HomePage() {
       {/* Saved Domains Tray */}
       {savedDomains.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
-          <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="max-w-6xl mx-auto px-6 py-4">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <Heart className="w-5 h-5 text-pink-500 fill-pink-500" />
@@ -825,9 +775,7 @@ export default function HomePage() {
                 ))}
               </div>
 
-              <button
-                className="px-6 py-2 bg-gradient-to-r from-brand-blue to-brand-violet text-white rounded-lg font-semibold hover:shadow-lg transition-all"
-              >
+              <button className="px-6 py-2 bg-gradient-to-r from-brand-blue to-brand-violet text-white rounded-lg font-semibold hover:shadow-lg transition-all">
                 Compare →
               </button>
             </div>
