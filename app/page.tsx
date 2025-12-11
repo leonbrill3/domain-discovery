@@ -14,6 +14,7 @@ import { CharacterRangeSlider } from '@/components/CharacterRangeSlider';
 import { Tooltip } from 'react-tooltip';
 import { DomainTooltip } from '@/components/DomainTooltip';
 import { DomainDetailsModal } from '@/components/DomainDetailsModal';
+import { AdminAlert } from '@/components/AdminAlert';
 import type { DomainAnalysis } from '@/lib/ai/ranking';
 
 interface Recipe {
@@ -180,6 +181,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      <AdminAlert />
       <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="text-center mb-8">
