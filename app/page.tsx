@@ -1,16 +1,15 @@
 /**
- * 🏠 DOMAINSEEK.AI - Sentence Builder UI
+ * 🏠 DOMAINSEEK.AI - Step-based UI with compact styles
  *
- * "I want domains that feel..." - natural language approach
- * Features: Search styles with descriptions, hover tooltips, better filters
+ * ① Build a style → ② Your search list
+ * Inline character slider, compact style chips
  */
 
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Sparkles, Search, Heart, Loader2, Plus, X, SlidersHorizontal, ChevronDown, HelpCircle } from 'lucide-react';
-import { THEMES, type ThemeId } from '@/lib/ai/themes';
-import { CharacterRangeSlider } from '@/components/CharacterRangeSlider';
+import { Sparkles, Search, Heart, Loader2, X } from 'lucide-react';
+import { type ThemeId } from '@/lib/ai/themes';
 import { DomainDetailsModal } from '@/components/DomainDetailsModal';
 import { DomainTooltip } from '@/components/DomainTooltip';
 import { AdminAlert } from '@/components/AdminAlert';
@@ -204,8 +203,6 @@ function getStyleDescription(vibes: ThemeId[]): string {
     const vibe = VIBE_DATA[vibes[0]];
     return `${vibe.description} - ${vibe.examples.slice(0, 3).join(', ')}`;
   }
-
-  // Combo - join descriptions
   const descs = vibes.map(v => VIBE_DATA[v]?.description || v);
   return descs.join(' meets ');
 }
@@ -215,9 +212,9 @@ function getStyleName(vibes: ThemeId[]): string {
   return vibes.map(v => VIBE_DATA[v]?.name || v).join(' + ');
 }
 
-// Get emoji string for style
-function getStyleEmojis(vibes: ThemeId[]): string {
-  return vibes.map(v => VIBE_DATA[v]?.emoji || '').join('+');
+// Get short emoji name for style chip
+function getStyleChipLabel(vibes: ThemeId[]): string {
+  return vibes.map(v => `${VIBE_DATA[v]?.emoji}${VIBE_DATA[v]?.name}`).join(' + ');
 }
 
 export default function HomePage() {
@@ -228,10 +225,9 @@ export default function HomePage() {
   const [styles, setStyles] = useState<SearchStyle[]>([]);
   const [selectedVibes, setSelectedVibes] = useState<ThemeId[]>([]);
 
-  // Settings
+  // Settings - inline now
   const [selectedTLDs, setSelectedTLDs] = useState<string[]>(['com', 'ai']);
   const [charRange, setCharRange] = useState<[number, number]>([4, 12]);
-  const [showSettings, setShowSettings] = useState(false);
 
   // Results
   const [domains, setDomains] = useState<DomainResult[]>([]);
@@ -255,9 +251,6 @@ export default function HomePage() {
   const [selectedDomain, setSelectedDomain] = useState<DomainResult | null>(null);
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
   const [hoveredDomain, setHoveredDomain] = useState<string | null>(null);
-
-  // Help tooltip
-  const [showHelp, setShowHelp] = useState(false);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -542,7 +535,7 @@ export default function HomePage() {
 
       <main className="max-w-5xl mx-auto px-6 py-8">
         {/* Project Input */}
-        <div className="mb-8">
+        <div className="mb-6">
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             What are you building?
           </label>
@@ -558,14 +551,16 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Vibe Selection */}
-        <div className="mb-6 p-6 bg-white rounded-xl border border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            I want domains that feel...
-          </h2>
+        {/* Step 1: Build a Style */}
+        <div className="mb-4 p-5 bg-white rounded-xl border border-gray-200">
+          <div className="flex items-baseline gap-3 mb-3">
+            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-brand-blue text-white text-sm font-bold">1</span>
+            <h2 className="text-base font-semibold text-gray-900">Build a style</h2>
+            <span className="text-sm text-gray-500">(click multiple to combine)</span>
+          </div>
 
           {/* Vibe Chips */}
-          <div className="flex flex-wrap gap-2 mb-4">
+          <div className="flex flex-wrap gap-2 mb-3">
             {VIBE_ORDER.map((vibeId) => {
               const vibe = VIBE_DATA[vibeId];
               const isSelected = selectedVibes.includes(vibeId);
@@ -575,7 +570,7 @@ export default function HomePage() {
                   data-tooltip-id={`vibe-tooltip-${vibeId}`}
                   onClick={() => toggleVibe(vibeId)}
                   className={`
-                    px-3 py-2 rounded-lg border text-sm font-medium transition-all
+                    px-2.5 py-1.5 rounded-lg border text-sm font-medium transition-all
                     ${isSelected
                       ? 'border-brand-blue bg-blue-50 text-brand-blue'
                       : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
@@ -596,84 +591,78 @@ export default function HomePage() {
                 key={`tooltip-${vibeId}`}
                 id={`vibe-tooltip-${vibeId}`}
                 place="top"
-                className="!bg-gray-900 !text-white !rounded-lg !px-4 !py-3 !max-w-xs z-50"
+                className="!bg-gray-900 !text-white !rounded-lg !px-3 !py-2 !max-w-xs z-50"
               >
-                <div className="text-sm">
-                  <div className="font-bold mb-1">{vibe.emoji} {vibe.title}</div>
-                  <div className="text-gray-300 mb-2">Examples: {vibe.examples.join(', ')}</div>
-                  <div className="text-gray-400 text-xs">Good for: {vibe.goodFor}</div>
+                <div className="text-xs">
+                  <div className="font-bold">{vibe.title}</div>
+                  <div className="text-gray-300">{vibe.examples.join(', ')}</div>
                 </div>
               </Tooltip>
             );
           })}
 
-          {/* Selected Preview */}
+          {/* Selected Preview + Add Button */}
           {selectedVibes.length > 0 && (
-            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <div>
-                <span className="text-sm text-gray-600">Selected: </span>
-                <span className="font-semibold text-gray-900">
-                  {selectedVibes.map(v => `${VIBE_DATA[v].emoji} ${VIBE_DATA[v].name}`).join(' + ')}
-                </span>
-              </div>
+            <div className="flex items-center justify-between p-2.5 bg-blue-50 rounded-lg border border-blue-200">
+              <span className="text-sm text-gray-900">
+                {selectedVibes.map(v => `${VIBE_DATA[v].emoji} ${VIBE_DATA[v].name}`).join(' + ')}
+              </span>
               <button
                 onClick={saveAsStyle}
-                className="px-4 py-2 bg-brand-blue text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
+                className="px-3 py-1.5 bg-brand-blue text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
               >
-                Save as style →
+                Add to search list →
               </button>
             </div>
           )}
         </div>
 
-        {/* My Search Styles */}
-        {styles.length > 0 && (
-          <div className="mb-6 p-6 bg-white rounded-xl border border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-semibold text-gray-900">My search styles</h2>
-                <button
-                  onClick={() => setShowHelp(!showHelp)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <HelpCircle className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {showHelp && (
-              <div className="mb-4 p-3 bg-blue-50 rounded-lg text-sm text-gray-700">
-                Each style searches separately. Results from all styles are combined and ranked together.
-                Combine vibes (like Greek + Catchy) for unique naming directions!
-              </div>
+        {/* Step 2: Your Search List */}
+        <div className="mb-4 p-5 bg-white rounded-xl border border-gray-200">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-brand-blue text-white text-sm font-bold">2</span>
+            <h2 className="text-base font-semibold text-gray-900">Your search list</h2>
+            {styles.length > 0 && (
+              <span className="text-sm text-gray-500">
+                {styles.length} style{styles.length !== 1 ? 's' : ''} will search in parallel
+              </span>
             )}
+          </div>
 
-            <div className="space-y-2">
+          {styles.length === 0 ? (
+            <p className="text-sm text-gray-400 italic">No styles yet. Build one above and add it.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
               {styles.map((style) => (
                 <div
                   key={style.id}
-                  className="flex items-start justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                  data-tooltip-id={`style-tooltip-${style.id}`}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 rounded-lg border border-gray-200 group"
                 >
-                  <div>
-                    <div className="font-semibold text-gray-900">
-                      {style.vibes.map(v => `${VIBE_DATA[v].emoji} ${VIBE_DATA[v].name}`).join(' + ')}
-                    </div>
-                    <div className="text-sm text-gray-500">{style.description}</div>
-                  </div>
+                  <span className="text-sm font-medium text-gray-800">
+                    {getStyleChipLabel(style.vibes)}
+                  </span>
                   <button
                     onClick={() => removeStyle(style.id)}
-                    className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                    className="text-gray-400 hover:text-red-500 transition-colors"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-3.5 h-3.5" />
                   </button>
+                  <Tooltip
+                    id={`style-tooltip-${style.id}`}
+                    place="top"
+                    className="!bg-gray-900 !text-white !rounded-lg !px-3 !py-2 z-50"
+                  >
+                    <div className="text-xs">{style.description}</div>
+                  </Tooltip>
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
-        {/* Settings Row */}
-        <div className="mb-6 flex items-center gap-4 flex-wrap">
+        {/* Settings Row - All Inline */}
+        <div className="mb-6 flex items-center gap-4 flex-wrap bg-white rounded-xl border border-gray-200 p-4">
           {/* TLDs */}
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-600">TLDs:</span>
@@ -692,7 +681,7 @@ export default function HomePage() {
                     : [...prev, tld]
                 )}
                 className={`
-                  px-2.5 py-1 rounded text-xs font-mono transition-all
+                  px-2 py-1 rounded text-xs font-mono transition-all
                   ${selectedTLDs.includes(tld)
                     ? 'bg-brand-blue text-white'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -704,22 +693,39 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* More Settings */}
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
-          >
-            <SlidersHorizontal className="w-4 h-4" />
-            More
-            <ChevronDown className={`w-3 h-3 transition-transform ${showSettings ? 'rotate-180' : ''}`} />
-          </button>
+          {/* Divider */}
+          <div className="w-px h-6 bg-gray-200" />
+
+          {/* Character Length - Inline */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">Length:</span>
+            <input
+              type="range"
+              min={3}
+              max={15}
+              value={charRange[0]}
+              onChange={(e) => setCharRange([parseInt(e.target.value), charRange[1]])}
+              className="w-16 h-1.5 accent-brand-blue"
+            />
+            <span className="text-sm font-mono text-gray-700 w-6 text-center">{charRange[0]}</span>
+            <span className="text-gray-400">-</span>
+            <input
+              type="range"
+              min={3}
+              max={15}
+              value={charRange[1]}
+              onChange={(e) => setCharRange([charRange[0], parseInt(e.target.value)])}
+              className="w-16 h-1.5 accent-brand-blue"
+            />
+            <span className="text-sm font-mono text-gray-700 w-6 text-center">{charRange[1]}</span>
+          </div>
 
           {/* Generate Button */}
           <button
             onClick={() => generateDomains(false)}
             disabled={styles.length === 0 || !project.trim() || isGenerating}
             className={`
-              ml-auto px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2
+              ml-auto px-5 py-2 rounded-xl font-bold text-sm transition-all flex items-center gap-2
               ${styles.length > 0 && project.trim() && !isGenerating
                 ? 'bg-gradient-to-r from-brand-blue to-brand-violet text-white hover:shadow-lg hover:scale-[1.02]'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
@@ -734,23 +740,11 @@ export default function HomePage() {
             ) : (
               <>
                 <Sparkles className="w-4 h-4" />
-                Generate from all styles
+                Generate
               </>
             )}
           </button>
         </div>
-
-        {/* Expanded Settings */}
-        {showSettings && (
-          <div className="mb-6 p-4 bg-white rounded-xl border border-gray-200">
-            <CharacterRangeSlider
-              min={3}
-              max={15}
-              value={charRange}
-              onChange={setCharRange}
-            />
-          </div>
-        )}
 
         {/* Results Section */}
         {(domains.length > 0 || isGenerating) && (
@@ -777,79 +771,76 @@ export default function HomePage() {
             {/* Filter Section */}
             {domains.length > 0 && (
               <div className="mb-6 p-4 bg-white rounded-xl border border-gray-200">
-                <div className="text-sm text-gray-500 mb-3">Filter results:</div>
-                <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="text-sm text-gray-500">Filter:</span>
+
                   {/* Length filters */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500 w-16">Length</span>
-                    <button
-                      onClick={() => toggleFilter('maxLength', 6)}
-                      className={`px-3 py-1.5 rounded-full text-sm transition-all ${
-                        activeFilters.maxLength === 6
-                          ? 'bg-brand-blue text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      Short (≤6)
-                    </button>
-                    <button
-                      onClick={() => toggleFilter('maxLength', 8)}
-                      className={`px-3 py-1.5 rounded-full text-sm transition-all ${
-                        activeFilters.maxLength === 8
-                          ? 'bg-brand-blue text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      Medium (≤8)
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => toggleFilter('maxLength', 6)}
+                    className={`px-2.5 py-1 rounded-full text-xs transition-all ${
+                      activeFilters.maxLength === 6
+                        ? 'bg-brand-blue text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Short (≤6)
+                  </button>
+                  <button
+                    onClick={() => toggleFilter('maxLength', 8)}
+                    className={`px-2.5 py-1 rounded-full text-xs transition-all ${
+                      activeFilters.maxLength === 8
+                        ? 'bg-brand-blue text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Medium (≤8)
+                  </button>
+
+                  <span className="text-gray-300">|</span>
 
                   {/* TLD filters */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500 w-16">TLD</span>
-                    {selectedTLDs.map(tld => (
-                      <button
-                        key={tld}
-                        onClick={() => toggleFilter('tldFilter', tld)}
-                        className={`px-3 py-1.5 rounded-full text-sm font-mono transition-all ${
-                          activeFilters.tldFilter === tld
-                            ? 'bg-brand-blue text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        .{tld}
-                      </button>
-                    ))}
-                  </div>
+                  {selectedTLDs.map(tld => (
+                    <button
+                      key={tld}
+                      onClick={() => toggleFilter('tldFilter', tld)}
+                      className={`px-2.5 py-1 rounded-full text-xs font-mono transition-all ${
+                        activeFilters.tldFilter === tld
+                          ? 'bg-brand-blue text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      .{tld}
+                    </button>
+                  ))}
 
-                  {/* Style filters */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500 w-16">Style</span>
-                    {Array.from(resultStyles.entries()).map(([styleId, { name }]) => (
-                      <button
-                        key={styleId}
-                        onClick={() => toggleFilter('styleId', styleId)}
-                        className={`px-3 py-1.5 rounded-full text-sm transition-all ${
-                          activeFilters.styleId === styleId
-                            ? 'bg-brand-blue text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        {name}
-                      </button>
-                    ))}
-                  </div>
+                  {resultStyles.size > 1 && (
+                    <>
+                      <span className="text-gray-300">|</span>
+                      {/* Style filters */}
+                      {Array.from(resultStyles.entries()).map(([styleId, { name }]) => (
+                        <button
+                          key={styleId}
+                          onClick={() => toggleFilter('styleId', styleId)}
+                          className={`px-2.5 py-1 rounded-full text-xs transition-all ${
+                            activeFilters.styleId === styleId
+                              ? 'bg-brand-blue text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {name}
+                        </button>
+                      ))}
+                    </>
+                  )}
 
                   {/* Clear all */}
                   {Object.keys(activeFilters).length > 0 && (
-                    <div className="flex justify-end">
-                      <button
-                        onClick={() => setActiveFilters({})}
-                        className="text-sm text-gray-500 hover:text-gray-700"
-                      >
-                        Clear all
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => setActiveFilters({})}
+                      className="ml-auto text-xs text-gray-500 hover:text-gray-700"
+                    >
+                      Clear
+                    </button>
                   )}
                 </div>
               </div>
@@ -951,10 +942,10 @@ export default function HomePage() {
 
         {/* Empty State */}
         {domains.length === 0 && !isGenerating && (
-          <div className="text-center py-16 text-gray-500">
-            <Sparkles className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-            <p className="text-lg font-medium mb-2">Ready to find your perfect domain</p>
-            <p className="text-sm">Select vibes above, save as style, then generate!</p>
+          <div className="text-center py-12 text-gray-500">
+            <Sparkles className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+            <p className="text-base font-medium mb-1">Ready to find your perfect domain</p>
+            <p className="text-sm">Build a style above, add it to your search list, then generate!</p>
           </div>
         )}
       </main>
@@ -962,31 +953,31 @@ export default function HomePage() {
       {/* Saved Domains Tray */}
       {savedDomains.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
-          <div className="max-w-5xl mx-auto px-6 py-4">
+          <div className="max-w-5xl mx-auto px-6 py-3">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <Heart className="w-5 h-5 text-pink-500 fill-pink-500" />
-                <span className="font-semibold text-gray-900">Saved ({savedDomains.length})</span>
+                <Heart className="w-4 h-4 text-pink-500 fill-pink-500" />
+                <span className="font-semibold text-gray-900 text-sm">Saved ({savedDomains.length})</span>
               </div>
 
               <div className="flex-1 flex items-center gap-2 overflow-x-auto">
                 {savedDomains.map((domain) => (
                   <div
                     key={domain.domain}
-                    className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg flex-shrink-0"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-100 rounded-lg flex-shrink-0"
                   >
                     <span className="font-mono text-sm text-gray-900">{domain.domain}</span>
                     <button
                       onClick={() => toggleSave(domain)}
                       className="text-gray-400 hover:text-red-500 transition-colors"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ))}
               </div>
 
-              <button className="px-6 py-2 bg-gradient-to-r from-brand-blue to-brand-violet text-white rounded-lg font-semibold hover:shadow-lg transition-all">
+              <button className="px-4 py-1.5 bg-gradient-to-r from-brand-blue to-brand-violet text-white rounded-lg font-semibold text-sm hover:shadow-lg transition-all">
                 Compare →
               </button>
             </div>
