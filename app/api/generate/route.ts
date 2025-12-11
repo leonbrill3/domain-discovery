@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateDomainsForThemes, interpretUserInput } from '@/lib/ai/claude';
 import { checkDomainsBatch } from '@/lib/domain/checker';
+import { checkWaybackBatch } from '@/lib/domain/wayback';
 import type { ThemeId } from '@/lib/ai/themes';
 import { z } from 'zod';
 
@@ -78,6 +79,12 @@ export async function POST(request: NextRequest) {
 
     console.log(`[API/Generate] Filtered: ${availableOnly.length}/${allDomains.length} available (${((availableOnly.length / allDomains.length) * 100).toFixed(1)}%)`);
 
+    // Check Wayback Machine for available domains (to detect previously registered)
+    const availableDomainNames = availableOnly.map(r => r.domain);
+    const waybackResults = await checkWaybackBatch(availableDomainNames, 10);
+    const previouslyRegistered = [...waybackResults.values()].filter(r => r.wasRegistered).length;
+    console.log(`[API/Generate] Wayback: ${previouslyRegistered}/${availableDomainNames.length} were previously registered`);
+
     // Organize results by theme - ONLY AVAILABLE DOMAINS
     const domainsByTheme: Record<string, Array<{
       domain: string;
@@ -85,6 +92,8 @@ export async function POST(request: NextRequest) {
       price?: number;
       currency?: string;
       confidence: number;
+      previouslyRegistered?: boolean;
+      lastSnapshot?: string;
     }>> = {};
 
     for (const [themeId, domains] of Object.entries(results)) {
@@ -94,12 +103,16 @@ export async function POST(request: NextRequest) {
           const status = availableOnly.find(r => r.domain === domain);
           if (!status) return null; // Exclude unavailable or low-confidence
 
+          const wayback = waybackResults.get(domain);
+
           return {
             domain,
             available: true, // Always true since we pre-filtered
             price: status.price,
             currency: status.currency,
             confidence: status.confidence,
+            previouslyRegistered: wayback?.wasRegistered || false,
+            lastSnapshot: wayback?.lastSnapshot,
           };
         })
         .filter((d): d is NonNullable<typeof d> => d !== null);

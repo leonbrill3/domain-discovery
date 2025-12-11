@@ -30,6 +30,8 @@ interface DomainResult {
   price?: number;
   confidence: number;
   analysis?: DomainAnalysis;
+  previouslyRegistered?: boolean;
+  lastSnapshot?: string;
 }
 
 export default function HomePage() {
@@ -461,6 +463,14 @@ export default function HomePage() {
                                 <span className="text-sm font-mono text-gray-900 truncate group-hover:text-brand-blue font-medium transition-colors">
                                   {domainResult.domain}
                                 </span>
+                                {domainResult.previouslyRegistered && (
+                                  <span
+                                    className="text-xs px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded font-medium"
+                                    title={`Previously registered${domainResult.lastSnapshot ? ` (last seen: ${domainResult.lastSnapshot})` : ''}`}
+                                  >
+                                    ♻️ SEO
+                                  </span>
+                                )}
                                 {domainResult.analysis && (
                                   <span className="text-xs font-semibold text-brand-blue">
                                     {domainResult.analysis.overallScore.toFixed(1)}
