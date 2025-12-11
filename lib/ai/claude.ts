@@ -97,8 +97,13 @@ export async function generateDomainsForTheme(
     ? `${constraints.charMin}-${constraints.charMax} characters (excluding TLD)`
     : '5-15 characters (excluding TLD)';
 
-  // Build user prompt with explicit constraints
-  const userPrompt = `Project Description: "${project}"
+  // Themes that need project context (descriptive/direct themes)
+  const PROJECT_DEPENDENT_THEMES = ['direct', 'descriptive', 'clear', 'keyword-rich', 'exact-match'];
+  const needsProject = PROJECT_DEPENDENT_THEMES.includes(themeId);
+
+  // Build user prompt - only include project for descriptive themes
+  const userPrompt = needsProject
+    ? `Project Description: "${project}"
 
 Theme: ${theme.name}
 
@@ -109,7 +114,17 @@ CONSTRAINTS:
 - Length: ${charLength}
 - Each domain MUST match both constraints
 
-Generate exactly ${count} domain names for this project using the ${theme.name} theme.`;
+Generate exactly ${count} domain names for this project using the ${theme.name} theme.`
+    : `Theme: ${theme.name}
+
+${theme.prompt}
+
+CONSTRAINTS:
+- TLDs: ONLY use these TLDs: ${tldList}
+- Length: ${charLength}
+- Each domain MUST match both constraints
+
+Generate exactly ${count} creative domain names using ONLY the ${theme.name} theme. Do NOT reference any specific business or project - generate pure themed names that could work for any brand.`;
 
   try {
     const startTime = Date.now();

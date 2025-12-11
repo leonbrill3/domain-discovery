@@ -100,7 +100,7 @@ export default function HomePage() {
         body: JSON.stringify({
           project,
           themes: recipe.themes,
-          countPerTheme: Math.ceil(5 / recipe.themes.length),
+          countPerTheme: 50, // Max out Namecheap bulk API (50 domains per call)
           charMin: charRange[0],
           charMax: charRange[1],
           tlds: selectedTLDs,
