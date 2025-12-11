@@ -421,9 +421,16 @@ export default function HomePage() {
               })}
             </div>
 
-            {domains.length > 0 && !isGenerating && (
+            {domains.length > 0 && (
               <div className="mt-4 text-center">
-                <button onClick={() => generateDomains(true)} className="px-4 py-2 text-xs font-medium text-gray-600 hover:text-brand-blue transition-colors">+ Load More</button>
+                {isGenerating ? (
+                  <div className="flex items-center justify-center gap-2 text-gray-500">
+                    <div className="w-4 h-4 border-2 border-brand-blue border-t-transparent rounded-full animate-spin" />
+                    <span className="text-xs font-medium">Loading more domains...</span>
+                  </div>
+                ) : (
+                  <button onClick={() => generateDomains(true)} className="px-4 py-2 text-xs font-medium text-gray-600 hover:text-brand-blue transition-colors">+ Load More</button>
+                )}
               </div>
             )}
           </div>
