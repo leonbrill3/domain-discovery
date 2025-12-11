@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
         // Replace results with expanded results
         availableOnly.push(...expandedAvailable);
         for (const [themeId, domains] of Object.entries(expandedResults.results)) {
-          results[themeId] = domains;
+          (results as Record<string, string[]>)[themeId] = domains;
         }
         expandedNote = `No ${charMax}-char domains available. Showing ${expandedCharMin}-${expandedCharMax} char alternatives.`;
         console.log(`[API/Generate] Auto-expand found ${expandedAvailable.length} domains`);
