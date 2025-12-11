@@ -78,39 +78,6 @@ export async function POST(request: NextRequest) {
 
     console.log(`[API/Generate] Filtered: ${availableOnly.length}/${allDomains.length} available (${((availableOnly.length / allDomains.length) * 100).toFixed(1)}%)`);
 
-    // AUTO-EXPAND: If no domains found and charMax is short, try again with longer length
-    let expandedNote = '';
-    if (availableOnly.length === 0 && charMax <= 6) {
-      const expandedCharMin = Math.max(charMin, 5);
-      const expandedCharMax = Math.min(charMax + 3, 10);
-
-      console.log(`[API/Generate] No results at ${charMin}-${charMax} chars, auto-expanding to ${expandedCharMin}-${expandedCharMax}`);
-
-      // Generate with expanded constraints
-      const expandedResults = await generateDomainsForThemes(
-        project,
-        themes as ThemeId[],
-        countPerTheme,
-        { tlds, charMin: expandedCharMin, charMax: expandedCharMax }
-      );
-
-      const expandedDomains = Object.values(expandedResults.results).flat();
-      const expandedAvailability = await checkDomainsBatch(expandedDomains);
-      const expandedAvailable = expandedAvailability.filter(
-        r => r.available && r.confidence >= MIN_CONFIDENCE
-      );
-
-      if (expandedAvailable.length > 0) {
-        // Replace results with expanded results
-        availableOnly.push(...expandedAvailable);
-        for (const [themeId, domains] of Object.entries(expandedResults.results)) {
-          (results as Record<string, string[]>)[themeId] = domains;
-        }
-        expandedNote = `No ${charMax}-char domains available. Showing ${expandedCharMin}-${expandedCharMax} char alternatives.`;
-        console.log(`[API/Generate] Auto-expand found ${expandedAvailable.length} domains`);
-      }
-    }
-
     // Organize results by theme - ONLY AVAILABLE DOMAINS
     const domainsByTheme: Record<string, Array<{
       domain: string;
@@ -159,7 +126,6 @@ export async function POST(request: NextRequest) {
           totalTime: totalDuration,
         },
         tokensUsed: totalTokensUsed,
-        note: expandedNote || undefined, // Message if we auto-expanded
       },
     });
 
