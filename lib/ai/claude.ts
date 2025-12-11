@@ -35,6 +35,12 @@ CRITICAL: Prioritize domain availability!
 - Use modern suffixes: -ly, -ify, -hub, -lab, -flow, -base
 - Mix unexpected elements to create uniqueness
 
+FOR SHORT DOMAINS (4-6 chars):
+- DO NOT use real English words (flow, peak, bold = ALL TAKEN)
+- Create MADE-UP but pronounceable names (zova, kiru, plyx, novu)
+- Use consonant-vowel patterns: CVCV (like "novu"), CVCC (like "brix")
+- These invented names are more likely available AND more brandable
+
 SEO BEST PRACTICES:
 - Include relevant keywords naturally when they fit the theme
 - Prioritize .com for maximum SEO authority (but use others when appropriate)
