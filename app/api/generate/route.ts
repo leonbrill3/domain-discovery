@@ -20,6 +20,8 @@ const GenerateRequestSchema = z.object({
   tlds: z.array(z.string()).min(1).max(5).optional().default(['com', 'io', 'ai']), // User-selected TLDs
   charMin: z.number().min(3).max(15).optional().default(4), // Minimum characters (before TLD)
   charMax: z.number().min(3).max(20).optional().default(10), // Maximum characters (before TLD)
+  wordType: z.enum(['real', 'madeup', 'both']).optional().default('both'), // Real dictionary words vs made-up
+  language: z.string().optional().default('any'), // Language inspiration
 });
 
 export async function POST(request: NextRequest) {
@@ -28,7 +30,7 @@ export async function POST(request: NextRequest) {
 
     // Validate request
     const validated = GenerateRequestSchema.parse(body);
-    let { project, themes, countPerTheme, tlds, charMin, charMax } = validated;
+    let { project, themes, countPerTheme, tlds, charMin, charMax, wordType, language } = validated;
 
     // Interpret user input - detect commands like "4 letter word" or "something catchy"
     const interpreted = await interpretUserInput(project);
@@ -53,7 +55,7 @@ export async function POST(request: NextRequest) {
       project,
       themes as ThemeId[],
       countPerTheme,
-      { tlds, charMin, charMax } // Pass user constraints
+      { tlds, charMin, charMax, wordType, language } // Pass user constraints
     );
 
     // Flatten all domains for batch checking

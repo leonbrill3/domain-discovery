@@ -76,6 +76,8 @@ export interface GenerationConstraints {
   tlds?: string[];      // User-selected TLDs (e.g., ['com', 'io'])
   charMin?: number;     // Minimum characters (before TLD)
   charMax?: number;     // Maximum characters (before TLD)
+  wordType?: 'real' | 'madeup' | 'both';  // Real dictionary words vs made-up phonetic words
+  language?: string;    // Language inspiration (e.g., 'spanish', 'french', 'latin')
 }
 
 /**
@@ -173,6 +175,18 @@ export async function generateDomainsForTheme(
     ? `${constraints.charMin}-${constraints.charMax} characters (excluding TLD)`
     : '5-15 characters (excluding TLD)';
 
+  // Word type instruction
+  const wordTypeInstruction = constraints?.wordType === 'real'
+    ? '- Word Type: ONLY use real dictionary words (existing words from any language)'
+    : constraints?.wordType === 'madeup'
+    ? '- Word Type: ONLY use made-up/invented words that are phonetically pleasing and easy to pronounce (not real dictionary words)'
+    : '- Word Type: Mix of real words and creative made-up words';
+
+  // Language instruction
+  const languageInstruction = constraints?.language && constraints.language !== 'any'
+    ? `- Language: Draw inspiration from ${constraints.language} language (use ${constraints.language} words, roots, sounds, or translations)`
+    : '';
+
   // Themes that need project context (descriptive/direct themes)
   const PROJECT_DEPENDENT_THEMES = ['direct', 'descriptive', 'clear', 'keyword-rich', 'exact-match'];
   const needsProject = PROJECT_DEPENDENT_THEMES.includes(themeId);
@@ -188,7 +202,8 @@ ${theme.prompt}
 CONSTRAINTS:
 - TLDs: ONLY use these TLDs: ${tldList}
 - Length: ${charLength}
-- Each domain MUST match both constraints
+${wordTypeInstruction}
+${languageInstruction ? languageInstruction + '\n' : ''}- Each domain MUST match ALL constraints
 
 Generate exactly ${count} domain names for this project using the ${theme.name} theme.`
     : `Theme: ${theme.name}
@@ -198,7 +213,8 @@ ${theme.prompt}
 CONSTRAINTS:
 - TLDs: ONLY use these TLDs: ${tldList}
 - Length: ${charLength}
-- Each domain MUST match both constraints
+${wordTypeInstruction}
+${languageInstruction ? languageInstruction + '\n' : ''}- Each domain MUST match ALL constraints
 
 Generate exactly ${count} creative domain names using ONLY the ${theme.name} theme. Do NOT reference any specific business or project - generate pure themed names that could work for any brand.`;
 

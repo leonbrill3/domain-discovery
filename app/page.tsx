@@ -49,10 +49,38 @@ const VIBE_ORDER: ThemeId[] = [
   'solar-system', 'abstract', 'literary', 'music', 'art', 'gaming',
 ];
 
+// Word type options
+type WordType = 'real' | 'madeup' | 'both';
+const WORD_TYPES: { id: WordType; label: string; description: string }[] = [
+  { id: 'both', label: 'Any', description: 'Real & made-up words' },
+  { id: 'real', label: 'Real Words', description: 'Dictionary words only' },
+  { id: 'madeup', label: 'Made-up', description: 'Phonetic invented words' },
+];
+
+// Languages for inspiration
+const LANGUAGES = [
+  { id: 'any', label: 'Any Language', flag: '🌍' },
+  { id: 'english', label: 'English', flag: '🇬🇧' },
+  { id: 'spanish', label: 'Spanish', flag: '🇪🇸' },
+  { id: 'french', label: 'French', flag: '🇫🇷' },
+  { id: 'italian', label: 'Italian', flag: '🇮🇹' },
+  { id: 'german', label: 'German', flag: '🇩🇪' },
+  { id: 'portuguese', label: 'Portuguese', flag: '🇵🇹' },
+  { id: 'japanese', label: 'Japanese', flag: '🇯🇵' },
+  { id: 'latin', label: 'Latin', flag: '🏛️' },
+  { id: 'sanskrit', label: 'Sanskrit', flag: '🕉️' },
+  { id: 'arabic', label: 'Arabic', flag: '🇸🇦' },
+  { id: 'swahili', label: 'Swahili', flag: '🇰🇪' },
+  { id: 'hawaiian', label: 'Hawaiian', flag: '🌺' },
+  { id: 'nordic', label: 'Nordic', flag: '🇸🇪' },
+];
+
 interface SearchStyle {
   id: string;
   vibes: ThemeId[];
   description: string;
+  wordType: WordType;
+  language: string;
 }
 
 interface DomainResult {
@@ -80,8 +108,19 @@ function getStyleName(vibes: ThemeId[]): string {
   return vibes.map(v => VIBE_DATA[v]?.name || v).join(' + ');
 }
 
-function getStyleChipLabel(vibes: ThemeId[]): string {
-  return vibes.map(v => `${VIBE_DATA[v]?.emoji}${VIBE_DATA[v]?.name}`).join(' + ');
+function getStyleChipLabel(style: SearchStyle): string {
+  const parts: string[] = [];
+  if (style.vibes.length > 0) {
+    parts.push(style.vibes.map(v => `${VIBE_DATA[v]?.emoji}${VIBE_DATA[v]?.name}`).join('+'));
+  }
+  if (style.language && style.language !== 'any') {
+    const lang = LANGUAGES.find(l => l.id === style.language);
+    if (lang) parts.push(`${lang.flag}`);
+  }
+  if (style.wordType && style.wordType !== 'both') {
+    parts.push(style.wordType === 'real' ? '📖' : '✨');
+  }
+  return parts.join(' ') || 'Custom';
 }
 
 // Dual-thumb range slider
@@ -130,6 +169,8 @@ export default function HomePage() {
   const [project, setProject] = useState('');
   const [styles, setStyles] = useState<SearchStyle[]>([]);
   const [selectedVibes, setSelectedVibes] = useState<ThemeId[]>([]);
+  const [selectedWordType, setSelectedWordType] = useState<WordType>('both');
+  const [selectedLanguage, setSelectedLanguage] = useState('any');
   const [selectedTLDs, setSelectedTLDs] = useState<string[]>(['com', 'ai']);
   const [charRange, setCharRange] = useState<[number, number]>([4, 12]);
   const [domains, setDomains] = useState<DomainResult[]>([]);
@@ -170,9 +211,21 @@ export default function HomePage() {
   };
 
   const saveAsStyle = () => {
-    if (selectedVibes.length === 0) return;
-    setStyles(prev => [...prev, { id: `style-${Date.now()}`, vibes: [...selectedVibes], description: getStyleDescription(selectedVibes) }]);
+    if (selectedVibes.length === 0 && selectedLanguage === 'any' && selectedWordType === 'both') return;
+    const langLabel = LANGUAGES.find(l => l.id === selectedLanguage)?.label || '';
+    const wordLabel = WORD_TYPES.find(w => w.id === selectedWordType)?.label || '';
+    const vibeDesc = selectedVibes.length > 0 ? getStyleDescription(selectedVibes) : '';
+    const parts = [vibeDesc, selectedLanguage !== 'any' ? langLabel : '', selectedWordType !== 'both' ? wordLabel : ''].filter(Boolean);
+    setStyles(prev => [...prev, {
+      id: `style-${Date.now()}`,
+      vibes: [...selectedVibes],
+      description: parts.join(' + ') || 'Custom',
+      wordType: selectedWordType,
+      language: selectedLanguage,
+    }]);
     setSelectedVibes([]);
+    setSelectedWordType('both');
+    setSelectedLanguage('any');
   };
 
   const removeStyle = (styleId: string) => setStyles(prev => prev.filter(s => s.id !== styleId));
@@ -188,7 +241,16 @@ export default function HomePage() {
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ project, themes: style.vibes, countPerTheme: 25, charMin: charRange[0], charMax: charRange[1], tlds: selectedTLDs }),
+        body: JSON.stringify({
+          project,
+          themes: style.vibes.length > 0 ? style.vibes : ['catchy'],
+          countPerTheme: 25,
+          charMin: charRange[0],
+          charMax: charRange[1],
+          tlds: selectedTLDs,
+          wordType: style.wordType,
+          language: style.language,
+        }),
       });
       const data = await response.json();
       if (data.success && data.data?.themes) {
@@ -322,9 +384,40 @@ export default function HomePage() {
             })}
           </div>
 
-          {selectedVibes.length > 0 && (
+          {/* Word Type and Language selectors */}
+          <div className="flex items-center gap-4 mb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-600">Words:</span>
+              <div className="flex gap-1">
+                {WORD_TYPES.map((wt) => (
+                  <button key={wt.id} onClick={() => setSelectedWordType(wt.id)}
+                    data-tooltip-id="vibe-tooltips" data-tooltip-content={wt.description}
+                    className={`px-2 py-1 rounded text-xs font-medium transition-all ${selectedWordType === wt.id ? 'bg-brand-blue text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                  >{wt.label}</button>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-600">Language:</span>
+              <select value={selectedLanguage} onChange={(e) => setSelectedLanguage(e.target.value)}
+                className="px-2 py-1 rounded border border-gray-300 text-xs bg-white text-gray-700 focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none"
+              >
+                {LANGUAGES.map((lang) => (
+                  <option key={lang.id} value={lang.id}>{lang.flag} {lang.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {(selectedVibes.length > 0 || selectedLanguage !== 'any' || selectedWordType !== 'both') && (
             <div className="flex items-center justify-between p-2 bg-blue-50 rounded-lg border border-blue-200">
-              <span className="text-xs text-gray-900">{selectedVibes.map(v => `${VIBE_DATA[v].emoji} ${VIBE_DATA[v].name}`).join(' + ')}</span>
+              <span className="text-xs text-gray-900">
+                {[
+                  selectedVibes.length > 0 ? selectedVibes.map(v => `${VIBE_DATA[v].emoji} ${VIBE_DATA[v].name}`).join(' + ') : '',
+                  selectedLanguage !== 'any' ? `${LANGUAGES.find(l => l.id === selectedLanguage)?.flag} ${LANGUAGES.find(l => l.id === selectedLanguage)?.label}` : '',
+                  selectedWordType !== 'both' ? WORD_TYPES.find(w => w.id === selectedWordType)?.label : '',
+                ].filter(Boolean).join(' + ')}
+              </span>
               <button onClick={saveAsStyle} className="px-2.5 py-1 bg-brand-blue text-white rounded text-xs font-medium hover:bg-blue-600 transition-colors">Add to list →</button>
             </div>
           )}
@@ -344,7 +437,7 @@ export default function HomePage() {
             <div className="flex flex-wrap gap-1.5">
               {styles.map((style) => (
                 <div key={style.id} data-tooltip-id="style-tooltips" data-tooltip-content={style.description} className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded border border-gray-200">
-                  <span className="text-xs font-medium text-gray-800">{getStyleChipLabel(style.vibes)}</span>
+                  <span className="text-xs font-medium text-gray-800">{getStyleChipLabel(style)}</span>
                   <button onClick={() => removeStyle(style.id)} className="text-gray-400 hover:text-red-500 transition-colors"><X className="w-3 h-3" /></button>
                 </div>
               ))}
