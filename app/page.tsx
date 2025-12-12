@@ -242,7 +242,7 @@ export default function HomePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          project,
+          project: project || 'creative brand',
           themes: style.vibes.length > 0 ? style.vibes : ['catchy'],
           countPerTheme: 25,
           charMin: charRange[0],
@@ -274,7 +274,7 @@ export default function HomePage() {
         const response = await fetch('/api/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ domains: batch.map(d => d.domain), project }),
+          body: JSON.stringify({ domains: batch.map(d => d.domain), project: project || 'creative brand' }),
         });
         const data = await response.json();
         if (data.success && data.analyses) {
