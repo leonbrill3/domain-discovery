@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { FloatingTags, RotatingText } from '@/components/FloatingTags';
-import { DomainDetailsModal } from '@/components/DomainDetailsModal';
 import { Tooltip } from 'react-tooltip';
 import { Heart } from 'lucide-react';
 
@@ -27,8 +26,6 @@ export default function NewSearchPage() {
   const [results, setResults] = useState<DomainResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState<any>(null);
-  const [selectedDomain, setSelectedDomain] = useState<DomainResult | null>(null);
-  const [loadingAnalysis, setLoadingAnalysis] = useState(false);
   const [savedDomains, setSavedDomains] = useState<string[]>([]);
 
   // Load saved domains from localStorage
@@ -125,30 +122,6 @@ export default function NewSearchPage() {
     }
   };
 
-  const handleDomainClick = async (domainResult: DomainResult) => {
-    if (domainResult.analysis) {
-      setSelectedDomain(domainResult);
-      return;
-    }
-    setLoadingAnalysis(true);
-    setSelectedDomain(domainResult);
-    try {
-      const response = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ domains: [domainResult.domain], project: query || 'general brand' }),
-      });
-      const data = await response.json();
-      if (data.success && data.analyses?.[0]) {
-        setSelectedDomain({ ...domainResult, analysis: data.analyses[0] });
-      }
-    } catch (error) {
-      console.error('Analysis error:', error);
-    } finally {
-      setLoadingAnalysis(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       <div className="max-w-4xl mx-auto px-4 py-16">
@@ -221,7 +194,6 @@ export default function NewSearchPage() {
                     data-tooltip-html={domainResult.analysis
                       ? `<div class="text-xs"><div class="font-bold">${domainResult.domain}</div><div>Score: ${domainResult.analysis.overallScore.toFixed(1)}/10</div><div class="text-gray-400">${domainResult.analysis.meaning || ''}</div></div>`
                       : ''}
-                    onClick={() => handleDomainClick(domainResult)}
                     className={`flex items-center justify-between gap-1 px-1 py-1 cursor-pointer transition-all hover:bg-slate-800/50 rounded ${
                       saved ? 'text-pink-300' : ''
                     }`}
@@ -297,16 +269,6 @@ export default function NewSearchPage() {
 
       {/* Tooltips */}
       <Tooltip id="domain-tooltips" className="z-50" />
-
-      {/* Domain Details Modal */}
-      {selectedDomain && selectedDomain.analysis && (
-        <DomainDetailsModal
-          domain={selectedDomain.domain}
-          analysis={selectedDomain.analysis}
-          isLoading={loadingAnalysis}
-          onClose={() => setSelectedDomain(null)}
-        />
-      )}
     </div>
   );
 }
