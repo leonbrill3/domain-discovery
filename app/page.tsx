@@ -237,32 +237,32 @@ export default function NewSearchPage() {
         <span className="text-sm font-medium text-gray-400 tracking-wide">DomainSeek</span>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 py-12">
+      <div className="max-w-5xl mx-auto px-6 py-8">
         {/* Header with rotating text */}
-        <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold">
             <span className="text-gray-900">Find the perfect domain for your </span>
             <RotatingText />
           </h1>
         </div>
 
         {/* Search Input - full width, left aligned */}
-        <div className="flex items-center gap-4 mb-12">
-          <Search className="w-6 h-6 text-gray-400 flex-shrink-0" />
+        <div className="flex items-center gap-3 mb-10">
+          <Search className="w-5 h-5 text-gray-400 flex-shrink-0" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="meditation app inspired by greek mythology"
-            className="text-xl bg-transparent border-0 outline-none
+            className="text-lg bg-transparent border-0 outline-none
                        placeholder:text-gray-400 text-gray-900
                        w-full"
           />
         </div>
 
         {/* Floating Tags */}
-        <div className="mb-12">
+        <div className="mb-16">
           <FloatingTags onTagClick={handleTagClick} />
         </div>
 
