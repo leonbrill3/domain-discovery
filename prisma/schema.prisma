@@ -131,11 +131,31 @@ model AvailableDomain {
   pattern   String?            // Phonetic pattern: "CVCV"
   checkedAt DateTime @default(now())
 
+  // Pre-computed AI scores (Claude-generated, cached)
+  baseScore        Float?     // Overall brandability score 0-10
+  memorability     Float?     // How memorable 0-10
+  pronounceability Float?     // How easy to say 0-10
+  uniqueness       Float?     // How distinctive 0-10
+  professionalism  Float?     // How trustworthy 0-10
+  seoValue         Float?     // SEO potential 0-10
+
+  // AI-generated content (cached)
+  meaning          String?    // What the word means
+  phonetic         String?    // Pronunciation guide: "ZOH-vah"
+  syllables        Int?       // Number of syllables
+  logoStyles       String[]   // Suggested logo styles
+
+  // Embedding for semantic search (1536 dimensions for text-embedding-3-small)
+  embedding        Float[]    // Vector embedding for relevance matching
+
+  scoredAt         DateTime?  // When AI scoring was done
+
   @@index([tld])
   @@index([length])
   @@index([pattern])
   @@index([tld, length])
   @@index([checkedAt])
+  @@index([baseScore])
   @@map("available_domains")
 }
 
