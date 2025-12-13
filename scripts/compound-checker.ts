@@ -23,8 +23,29 @@ const BATCH_SIZE = 10;
 const TLD = 'ai';
 
 // Popular affixes for compound generation
-const SUFFIXES = ['flow', 'hub', 'lab', 'now', 'go', 'app', 'pro', 'plus', 'ly', 'ify', 'fy', 'er'];
-const PREFIXES = ['go', 'my', 'get', 'try', 'one', 'the', 'hey', 'use'];
+const SUFFIXES = [
+  // Action/Tech
+  'flow', 'hub', 'lab', 'now', 'go', 'app', 'pro', 'plus', 'ly', 'ify', 'fy', 'er',
+  // Semantic brand suffixes
+  'seek', 'find', 'scout', 'hunt', 'search', 'spot', 'snap', 'grab', 'pick', 'match',
+  // Tech/Modern
+  'ai', 'io', 'bot', 'api', 'sync', 'link', 'base', 'stack', 'cloud', 'wire',
+  // Business
+  'market', 'trade', 'deal', 'sale', 'shop', 'store', 'mart', 'bay', 'zone', 'space',
+  // Quality
+  'prime', 'elite', 'best', 'top', 'smart', 'fast', 'quick', 'instant', 'rapid', 'swift',
+  // Community
+  'club', 'crew', 'team', 'squad', 'tribe', 'gang', 'guild', 'clan', 'pack', 'herd'
+];
+const PREFIXES = [
+  'go', 'my', 'get', 'try', 'one', 'the', 'hey', 'use',
+  // Action prefixes
+  'find', 'seek', 'grab', 'snap', 'pick', 'spot',
+  // Quality prefixes
+  'top', 'best', 'smart', 'fast', 'quick', 'instant', 'super', 'mega', 'ultra', 'hyper',
+  // Ownership
+  'your', 'our', 'all', 'any', 'every'
+];
 
 // RDAP endpoints by TLD
 const RDAP_ENDPOINTS: Record<string, string> = {
