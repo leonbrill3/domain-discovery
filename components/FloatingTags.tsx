@@ -109,7 +109,7 @@ function FloatingTag({
   return (
     <button
       onClick={() => onClick(currentText)}
-      className="absolute whitespace-nowrap text-gray-700 hover:text-gray-900 text-lg font-light cursor-pointer transition-colors duration-200"
+      className="absolute whitespace-nowrap text-gray-700 hover:text-gray-900 text-xl font-light cursor-pointer transition-colors duration-200"
       style={{
         left: item.x,
         top: y,
@@ -230,16 +230,16 @@ export function FloatingTags({ onTagClick }: FloatingTagsProps) {
   }, [isClient, animate]);
 
   if (!isClient) {
-    return <div className="h-28" />;
+    return <div className="h-36" />;
   }
 
   // Calculate Y position for each row
-  const containerHeight = 112; // h-28 = 112px
+  const containerHeight = 144; // h-36 = 144px
   const rowHeight = containerHeight / NUM_ROWS;
   const getRowY = (row: number) => rowHeight * row + rowHeight / 2;
 
   return (
-    <div ref={containerRef} className="relative w-full h-28 overflow-hidden">
+    <div ref={containerRef} className="relative w-full h-36 overflow-hidden">
       {/* Gradient fade edges */}
       <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-white to-transparent z-10" />
       <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-white to-transparent z-10" />
