@@ -1,610 +1,484 @@
-/**
- * 🏠 DOMAINSEEK.AI - Table Layout UI
- *
- * ① Build a style → ② Your search list
- * Aligned table rows, global tooltips, fast analysis
- */
-
 'use client';
 
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { Sparkles, Search, Heart, Loader2, X } from 'lucide-react';
-import { type ThemeId } from '@/lib/ai/themes';
-import { DomainDetailsModal } from '@/components/DomainDetailsModal';
-import { DomainTooltip } from '@/components/DomainTooltip';
-import { AdminAlert } from '@/components/AdminAlert';
+import { useState, useEffect, useCallback } from 'react';
+import { FloatingTags, RotatingText } from '@/components/FloatingTags';
 import { Tooltip } from 'react-tooltip';
-import type { DomainAnalysis } from '@/lib/ai/ranking';
+import { Heart, Search, X, ExternalLink } from 'lucide-react';
 
-// Vibe data with tooltips
-const VIBE_DATA: Record<string, {
-  id: ThemeId;
-  emoji: string;
-  name: string;
-  title: string;
-  examples: string[];
-  description: string;
-}> = {
-  'catchy': { id: 'catchy', emoji: '🎯', name: 'Catchy', title: 'Catchy & Memorable', examples: ['Zipzap', 'Buzzflow', 'Snapbean'], description: 'Short & memorable' },
-  'direct': { id: 'direct', emoji: '💼', name: 'Direct', title: 'Direct & Clear', examples: ['GetCoffee', 'CoffeeClub'], description: 'Clear business names' },
-  'nature': { id: 'nature', emoji: '🌿', name: 'Nature', title: 'Nature & Organic', examples: ['Willowbrew', 'Mossroast'], description: 'Organic & earthy' },
-  'tech': { id: 'tech', emoji: '⚡', name: 'Tech', title: 'Tech & Innovation', examples: ['NexusAI', 'QuantumLab'], description: 'Modern & innovative' },
-  'gen-z': { id: 'gen-z', emoji: '✨', name: 'Modern', title: 'Modern & Trendy', examples: ['Vibecheck', 'Glowup'], description: 'Fresh & trendy' },
-  'ancient-greek': { id: 'ancient-greek', emoji: '🏛️', name: 'Greek', title: 'Greek Mythology', examples: ['Nike', 'Hermes', 'Apollo'], description: 'Mythology inspired' },
-  'roman': { id: 'roman', emoji: '⚔️', name: 'Roman', title: 'Roman Empire', examples: ['Mars', 'Venus', 'Jupiter'], description: 'Imperial & commanding' },
-  'norse': { id: 'norse', emoji: '🪓', name: 'Norse', title: 'Norse Mythology', examples: ['Thor', 'Odin', 'Valhalla'], description: 'Viking & heroic' },
-  'astrology': { id: 'astrology', emoji: '⭐', name: 'Astrology', title: 'Zodiac & Celestial', examples: ['Aries', 'Luna', 'Stellar'], description: 'Celestial & mystical' },
-  'ocean': { id: 'ocean', emoji: '🌊', name: 'Ocean', title: 'Ocean & Maritime', examples: ['Waveflow', 'Tidalab'], description: 'Waves & maritime' },
-  'solar-system': { id: 'solar-system', emoji: '🌞', name: 'Cosmic', title: 'Space & Cosmos', examples: ['Novaforge', 'Stellarlink'], description: 'Space & stars' },
-  'abstract': { id: 'abstract', emoji: '🎭', name: 'Abstract', title: 'Abstract & Conceptual', examples: ['Zenith', 'Paradigm'], description: 'Conceptual & unique' },
-  'literary': { id: 'literary', emoji: '📚', name: 'Literary', title: 'Books & Literature', examples: ['Gatsby', 'Sherlock'], description: 'Classic & sophisticated' },
-  'music': { id: 'music', emoji: '🎵', name: 'Music', title: 'Music & Rhythm', examples: ['Rhythmflow', 'Harmonylab'], description: 'Rhythm & sound' },
-  'art': { id: 'art', emoji: '🎨', name: 'Art', title: 'Visual Arts', examples: ['Canvasflow', 'Palettelab'], description: 'Visual & creative' },
-  'gaming': { id: 'gaming', emoji: '🎮', name: 'Gaming', title: 'Gaming & Esports', examples: ['Questforge', 'Arcadeflow'], description: 'Playful & action' },
-};
-
-const VIBE_ORDER: ThemeId[] = [
-  'catchy', 'direct', 'nature', 'tech', 'gen-z',
-  'ancient-greek', 'roman', 'norse', 'astrology', 'ocean',
-  'solar-system', 'abstract', 'literary', 'music', 'art', 'gaming',
-];
-
-// Word type options
-type WordType = 'real' | 'madeup' | 'both';
-const WORD_TYPES: { id: WordType; label: string; description: string }[] = [
-  { id: 'both', label: 'Any', description: 'Real & made-up words' },
-  { id: 'real', label: 'Real Words', description: 'Dictionary words only' },
-  { id: 'madeup', label: 'Made-up', description: 'Phonetic invented words' },
-];
-
-// Languages for inspiration
-const LANGUAGES = [
-  { id: 'any', label: 'Any Language', flag: '🌍' },
-  { id: 'english', label: 'English', flag: '🇬🇧' },
-  { id: 'spanish', label: 'Spanish', flag: '🇪🇸' },
-  { id: 'french', label: 'French', flag: '🇫🇷' },
-  { id: 'italian', label: 'Italian', flag: '🇮🇹' },
-  { id: 'german', label: 'German', flag: '🇩🇪' },
-  { id: 'portuguese', label: 'Portuguese', flag: '🇵🇹' },
-  { id: 'japanese', label: 'Japanese', flag: '🇯🇵' },
-  { id: 'latin', label: 'Latin', flag: '🏛️' },
-  { id: 'sanskrit', label: 'Sanskrit', flag: '🕉️' },
-  { id: 'arabic', label: 'Arabic', flag: '🇸🇦' },
-  { id: 'swahili', label: 'Swahili', flag: '🇰🇪' },
-  { id: 'hawaiian', label: 'Hawaiian', flag: '🌺' },
-  { id: 'nordic', label: 'Nordic', flag: '🇸🇪' },
-];
-
-interface SearchStyle {
-  id: string;
-  vibes: ThemeId[];
-  description: string;
-  wordType: WordType;
-  language: string;
-  noCompounds: boolean;
+interface DomainAnalysis {
+  domain: string;
+  overallScore: number;
+  meaning: string;
+  scores: {
+    memorability?: number;
+    brandability?: number;
+    relevance?: number;
+    pronounceability?: number;
+    uniqueness?: number;
+    professionalism?: number;
+    seoValue?: number;
+  };
 }
 
 interface DomainResult {
   domain: string;
-  available: boolean;
-  price?: number;
-  confidence: number;
   analysis?: DomainAnalysis;
-  previouslyRegistered?: boolean;
-  lastSnapshot?: string;
-  styleId: string;
-  styleVibes: ThemeId[];
-  styleName: string;
 }
 
-function getStyleDescription(vibes: ThemeId[]): string {
-  if (vibes.length === 1) {
-    const vibe = VIBE_DATA[vibes[0]];
-    return `${vibe.description} - ${vibe.examples.slice(0, 3).join(', ')}`;
-  }
-  return vibes.map(v => VIBE_DATA[v]?.description || v).join(' meets ');
-}
-
-function getStyleName(vibes: ThemeId[]): string {
-  return vibes.map(v => VIBE_DATA[v]?.name || v).join(' + ');
-}
-
-function getStyleChipLabel(style: SearchStyle): string {
-  const parts: string[] = [];
-  if (style.vibes.length > 0) {
-    parts.push(style.vibes.map(v => `${VIBE_DATA[v]?.emoji}${VIBE_DATA[v]?.name}`).join('+'));
-  }
-  if (style.language && style.language !== 'any') {
-    const lang = LANGUAGES.find(l => l.id === style.language);
-    if (lang) parts.push(`${lang.flag}${lang.label}`);
-  }
-  if (style.wordType && style.wordType !== 'both') {
-    parts.push(style.wordType === 'real' ? '📖Real' : '✨Made-up');
-  }
-  if (style.noCompounds) {
-    parts.push('1️⃣Single');
-  }
-  return parts.join(' ') || 'Custom';
-}
-
-// Dual-thumb range slider
-function RangeSlider({ min, max, value, onChange }: {
-  min: number; max: number; value: [number, number]; onChange: (v: [number, number]) => void;
-}) {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const getPercent = (val: number) => ((val - min) / (max - min)) * 100;
-
-  const handleMouseDown = (thumb: 'min' | 'max') => (e: React.MouseEvent) => {
-    e.preventDefault();
-    const track = trackRef.current;
-    if (!track) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = track.getBoundingClientRect();
-      const percent = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
-      const newVal = Math.round(min + (percent / 100) * (max - min));
-      if (thumb === 'min') onChange([Math.min(newVal, value[1] - 1), value[1]]);
-      else onChange([value[0], Math.max(newVal, value[0] + 1)]);
-    };
-
-    const handleMouseUp = () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  };
-
-  return (
-    <div className="flex items-center gap-2">
-      <span className="text-xs text-gray-500 w-4">{value[0]}</span>
-      <div ref={trackRef} className="relative h-1.5 w-24 bg-gray-200 rounded-full cursor-pointer">
-        <div className="absolute h-full bg-brand-blue rounded-full" style={{ left: `${getPercent(value[0])}%`, right: `${100 - getPercent(value[1])}%` }} />
-        <div className="absolute w-3.5 h-3.5 bg-brand-blue rounded-full -translate-y-1/4 -translate-x-1/2 cursor-grab shadow-sm border-2 border-white" style={{ left: `${getPercent(value[0])}%` }} onMouseDown={handleMouseDown('min')} />
-        <div className="absolute w-3.5 h-3.5 bg-brand-blue rounded-full -translate-y-1/4 -translate-x-1/2 cursor-grab shadow-sm border-2 border-white" style={{ left: `${getPercent(value[1])}%` }} onMouseDown={handleMouseDown('max')} />
-      </div>
-      <span className="text-xs text-gray-500 w-4">{value[1]}</span>
-    </div>
-  );
-}
-
-export default function HomePage() {
-  const [project, setProject] = useState('');
-  const [styles, setStyles] = useState<SearchStyle[]>([]);
-  const [selectedVibes, setSelectedVibes] = useState<ThemeId[]>([]);
-  const [selectedWordType, setSelectedWordType] = useState<WordType>('both');
-  const [selectedLanguage, setSelectedLanguage] = useState('any');
-  const [selectedNoCompounds, setSelectedNoCompounds] = useState(false);
-  const [selectedTLDs, setSelectedTLDs] = useState<string[]>(['com', 'ai']);
-  const [charRange, setCharRange] = useState<[number, number]>([4, 12]);
-  const [domains, setDomains] = useState<DomainResult[]>([]);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [loadingStyles, setLoadingStyles] = useState<Set<string>>(new Set());
-  const [seenDomains, setSeenDomains] = useState<Set<string>>(new Set());
-  const [savedDomains, setSavedDomains] = useState<DomainResult[]>([]);
-  const [activeFilters, setActiveFilters] = useState<{ maxLength?: number; styleId?: string; tldFilter?: string }>({});
+export default function NewSearchPage() {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<DomainResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [stats, setStats] = useState<any>(null);
+  const [savedDomains, setSavedDomains] = useState<string[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [featuredLoading, setFeaturedLoading] = useState(true);
   const [selectedDomain, setSelectedDomain] = useState<DomainResult | null>(null);
-  const [loadingAnalysis, setLoadingAnalysis] = useState(false);
+  const [analyzingDomain, setAnalyzingDomain] = useState(false);
 
-  // Load from localStorage
+  // Load saved domains from localStorage
   useEffect(() => {
-    const seen = localStorage.getItem('domainseek_seen');
-    if (seen) try { setSeenDomains(new Set(JSON.parse(seen))); } catch {}
-    const saved = localStorage.getItem('domainseek_saved');
-    if (saved) try { setSavedDomains(JSON.parse(saved)); } catch {}
+    const saved = localStorage.getItem('savedDomains');
+    if (saved) setSavedDomains(JSON.parse(saved));
   }, []);
 
+  // Load featured domains on mount
   useEffect(() => {
-    if (seenDomains.size > 0) localStorage.setItem('domainseek_seen', JSON.stringify(Array.from(seenDomains)));
-  }, [seenDomains]);
-
-  useEffect(() => {
-    localStorage.setItem('domainseek_saved', JSON.stringify(savedDomains));
-  }, [savedDomains]);
-
-  const filteredDomains = useMemo(() => {
-    let result = domains;
-    if (activeFilters.maxLength) result = result.filter(d => d.domain.split('.')[0].length <= activeFilters.maxLength!);
-    if (activeFilters.styleId) result = result.filter(d => d.styleId === activeFilters.styleId);
-    if (activeFilters.tldFilter) result = result.filter(d => d.domain.endsWith(`.${activeFilters.tldFilter}`));
-    return result;
-  }, [domains, activeFilters]);
-
-  const toggleVibe = (vibeId: ThemeId) => {
-    setSelectedVibes(prev => prev.includes(vibeId) ? prev.filter(v => v !== vibeId) : [...prev, vibeId]);
-  };
-
-  const saveAsStyle = () => {
-    if (selectedVibes.length === 0 && selectedLanguage === 'any' && selectedWordType === 'both' && !selectedNoCompounds) return;
-    const langLabel = LANGUAGES.find(l => l.id === selectedLanguage)?.label || '';
-    const wordLabel = WORD_TYPES.find(w => w.id === selectedWordType)?.label || '';
-    const vibeDesc = selectedVibes.length > 0 ? getStyleDescription(selectedVibes) : '';
-    const parts = [vibeDesc, selectedLanguage !== 'any' ? langLabel : '', selectedWordType !== 'both' ? wordLabel : '', selectedNoCompounds ? 'Single Word' : ''].filter(Boolean);
-    setStyles(prev => [...prev, {
-      id: `style-${Date.now()}`,
-      vibes: [...selectedVibes],
-      description: parts.join(' + ') || 'Custom',
-      wordType: selectedWordType,
-      language: selectedLanguage,
-      noCompounds: selectedNoCompounds,
-    }]);
-    setSelectedVibes([]);
-    setSelectedWordType('both');
-    setSelectedLanguage('any');
-    setSelectedNoCompounds(false);
-  };
-
-  const removeStyle = (styleId: string) => setStyles(prev => prev.filter(s => s.id !== styleId));
-
-  const toggleSave = (domain: DomainResult) => {
-    setSavedDomains(prev => prev.some(d => d.domain === domain.domain) ? prev.filter(d => d.domain !== domain.domain) : [...prev, domain]);
-  };
-
-  const isSaved = (domain: string) => savedDomains.some(d => d.domain === domain);
-
-  const generateForStyle = useCallback(async (style: SearchStyle, existingDomains: Set<string>) => {
-    try {
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          project: project || 'creative brand',
-          themes: style.vibes.length > 0 ? style.vibes : ['catchy'],
-          countPerTheme: 25,
-          charMin: charRange[0],
-          charMax: charRange[1],
-          tlds: selectedTLDs,
-          wordType: style.wordType,
-          language: style.language,
-          noCompounds: style.noCompounds,
-        }),
-      });
-      const data = await response.json();
-      if (data.success && data.data?.themes) {
-        const themeDomains = Object.values(data.data.themes).flat() as DomainResult[];
-        return themeDomains
-          .filter(d => d.available && d.confidence >= 0.95)
-          .filter(d => !existingDomains.has(d.domain) && !seenDomains.has(d.domain))
-          .map(d => ({ ...d, styleId: style.id, styleVibes: style.vibes, styleName: getStyleName(style.vibes) }));
-      }
-    } catch (error) { console.error(`Generation error:`, error); }
-    return [];
-  }, [project, charRange, selectedTLDs, seenDomains]);
-
-  const getAnalysis = useCallback(async (domainsToAnalyze: DomainResult[]) => {
-    if (domainsToAnalyze.length === 0) return domainsToAnalyze;
-    // Batch in chunks of 20 (API limit)
-    const BATCH_SIZE = 20;
-    for (let i = 0; i < domainsToAnalyze.length; i += BATCH_SIZE) {
-      const batch = domainsToAnalyze.slice(i, i + BATCH_SIZE);
+    const loadFeatured = async () => {
       try {
-        const response = await fetch('/api/analyze', {
+        // Fetch random sample from pool
+        const res = await fetch('/api/pool/search', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ domains: batch.map(d => d.domain), project: project || 'creative brand' }),
+          body: JSON.stringify({ tld: 'ai', limit: 15 })
         });
-        const data = await response.json();
-        if (data.success && data.analyses) {
-          batch.forEach(domain => {
-            const analysis = data.analyses.find((a: DomainAnalysis) => a.domain === domain.domain);
-            if (analysis) domain.analysis = analysis;
-          });
+        const data = await res.json();
+        if (data.success && data.domains && data.domains.length > 0) {
+          // Domains are already strings like "cuish.ai"
+          const domains: string[] = data.domains.filter((d: any) => d && typeof d === 'string');
+
+          if (domains.length === 0) {
+            setFeaturedLoading(false);
+            return;
+          }
+
+          // Show domains immediately without scores
+          setResults(domains.map((d: string) => ({ domain: d })));
+          setFeaturedLoading(false);
+
+          // Skip analysis for featured - just show the domains
+          // Analysis API has issues with obscure words
         }
-      } catch (error) { console.warn('Analysis batch failed:', error); }
-    }
-    return domainsToAnalyze;
-  }, [project]);
+      } catch (error) {
+        console.warn('Failed to load featured domains:', error);
+      } finally {
+        setFeaturedLoading(false);
+      }
+    };
+    loadFeatured();
+  }, []);
 
-  const generateDomains = async (append = false) => {
-    if (styles.length === 0 || !project.trim()) return;
-    setIsGenerating(true);
-    if (!append) { setDomains([]); setActiveFilters({}); }
-
-    const existingDomains = new Set(domains.map(d => d.domain));
-    setLoadingStyles(new Set(styles.map(s => s.id)));
-
-    await Promise.all(styles.map(async (style) => {
-      const styleDomains = await generateForStyle(style, existingDomains);
-      styleDomains.forEach(d => existingDomains.add(d.domain));
-      const analyzed = await getAnalysis(styleDomains);
-
-      setDomains(prev => {
-        const newDomains = [...prev, ...analyzed];
-        newDomains.sort((a, b) => (b.analysis?.overallScore || 0) - (a.analysis?.overallScore || 0));
-        return newDomains;
-      });
-
-      setLoadingStyles(prev => { const next = new Set(prev); next.delete(style.id); return next; });
-      setSeenDomains(prev => { const next = new Set(prev); analyzed.forEach(d => next.add(d.domain)); return next; });
-    }));
-
-    setIsGenerating(false);
-  };
-
-  const handleDomainClick = async (domainResult: DomainResult) => {
-    if (domainResult.analysis) { setSelectedDomain(domainResult); return; }
-    setLoadingAnalysis(true);
-    setSelectedDomain(domainResult);
+  // Separate analysis function for featured (no query dependency)
+  const getAnalysisForFeatured = async (domains: string[]) => {
+    const results: DomainResult[] = domains.map(d => ({ domain: d }));
     try {
       const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ domains: [domainResult.domain], project: project || 'general brand' }),
+        body: JSON.stringify({ domains, project: 'brandable domain names' }),
       });
       const data = await response.json();
-      if (data.success && data.analyses?.[0]) setSelectedDomain({ ...domainResult, analysis: data.analyses[0] });
-    } catch (error) { console.error('Analysis error:', error); }
-    finally { setLoadingAnalysis(false); }
+      if (data.success && data.analyses) {
+        domains.forEach((domain, idx) => {
+          const analysis = data.analyses.find((a: DomainAnalysis) => a.domain === domain);
+          if (analysis && results[idx]) {
+            results[idx].analysis = analysis;
+          }
+        });
+      }
+    } catch (error) {
+      console.warn('Featured analysis failed:', error);
+    }
+    return results;
   };
 
-  const toggleFilter = (filterType: 'maxLength' | 'styleId' | 'tldFilter', value: number | string) => {
-    setActiveFilters(prev => {
-      if (prev[filterType] === value) { const { [filterType]: _, ...rest } = prev; return rest; }
-      return { ...prev, [filterType]: value };
+  const toggleSave = (domain: string) => {
+    setSavedDomains(prev => {
+      const next = prev.includes(domain)
+        ? prev.filter(d => d !== domain)
+        : [...prev, domain];
+      localStorage.setItem('savedDomains', JSON.stringify(next));
+      return next;
     });
   };
 
-  const resultStyles = useMemo(() => {
-    const styleMap = new Map<string, { vibes: ThemeId[]; name: string }>();
-    domains.forEach(d => { if (!styleMap.has(d.styleId)) styleMap.set(d.styleId, { vibes: d.styleVibes, name: d.styleName }); });
-    return styleMap;
-  }, [domains]);
+  const isSaved = (domain: string) => savedDomains.includes(domain);
+
+  const handleTagClick = (tag: string) => {
+    setQuery((prev) => prev.trim() ? `${prev.trim()} ${tag}` : tag);
+  };
+
+  // Analyze single domain on click (for modal)
+  const handleDomainClick = async (domainResult: DomainResult) => {
+    setSelectedDomain(domainResult);
+
+    // If we already have analysis, don't refetch
+    if (domainResult.analysis) return;
+
+    // Fetch analysis for this domain
+    setAnalyzingDomain(true);
+    try {
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          domains: [domainResult.domain],
+          project: query || 'creative brand name'
+        }),
+      });
+      const data = await response.json();
+      if (data.success && data.analyses && data.analyses.length > 0) {
+        const analysis = data.analyses[0];
+        // Update the selected domain with analysis
+        setSelectedDomain({ ...domainResult, analysis });
+        // Also update in results list
+        setResults(prev => prev.map(r =>
+          r.domain === domainResult.domain ? { ...r, analysis } : r
+        ));
+      }
+    } catch (error) {
+      console.warn('Domain analysis failed:', error);
+    } finally {
+      setAnalyzingDomain(false);
+    }
+  };
+
+  // Fetch analysis for domains
+  const getAnalysis = useCallback(async (rawDomains: (string | null | undefined)[]) => {
+    // Filter out nulls and ensure all are strings
+    const domains = rawDomains.filter((d): d is string => typeof d === 'string' && d.length > 0);
+    if (domains.length === 0) return [];
+
+    const BATCH_SIZE = 20;
+    const results: DomainResult[] = domains.map(d => ({ domain: d }));
+
+    for (let i = 0; i < domains.length; i += BATCH_SIZE) {
+      const batch = domains.slice(i, i + BATCH_SIZE);
+      try {
+        const response = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ domains: batch, project: query || 'creative brand' }),
+        });
+        const data = await response.json();
+        if (data.success && data.analyses) {
+          batch.forEach((domain, idx) => {
+            const analysis = data.analyses.find((a: DomainAnalysis) => a.domain === domain);
+            const resultIdx = i + idx;
+            if (analysis && results[resultIdx]) {
+              results[resultIdx].analysis = analysis;
+            }
+          });
+        }
+      } catch (error) {
+        console.warn('Analysis batch failed:', error);
+      }
+    }
+    return results;
+  }, [query]);
+
+  const handleSearch = async () => {
+    if (!query.trim()) return;
+
+    setLoading(true);
+    setResults([]);
+    setHasSearched(true);
+
+    try {
+      const res = await fetch('/api/pool/semantic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          description: query,
+          tld: 'ai',
+          limit: 15
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setStats(data.stats);
+        // Get analysis for the domains
+        const analyzed = await getAnalysis(data.domains);
+        // Sort by score
+        analyzed.sort((a, b) => (b.analysis?.overallScore || 0) - (a.analysis?.overallScore || 0));
+        setResults(analyzed);
+      } else {
+        console.error('Search failed:', data.error);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      <AdminAlert />
+    <div className="min-h-screen bg-white text-gray-900">
+      {/* Branding */}
+      <div className="text-center pt-8 pb-4">
+        <span className="text-sm font-medium text-gray-400 tracking-wide">DomainSeek</span>
+      </div>
 
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-5xl mx-auto px-6 py-4">
-          <h1 className="text-2xl font-bold text-gray-900">Domain<span className="text-brand-blue">Seek</span></h1>
-        </div>
-      </header>
-
-      <main className="max-w-5xl mx-auto px-6 py-6">
-        {/* Project Input */}
-        <div className="mb-5">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">What are you building?</label>
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input type="text" value={project} onChange={(e) => setProject(e.target.value)} placeholder="e.g., coffee subscription startup" className="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:border-brand-blue focus:ring-4 focus:ring-blue-50 outline-none text-base" />
-          </div>
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        {/* Header with rotating text */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold">
+            <span className="text-gray-900">Find the perfect domain for your </span>
+            <RotatingText />
+          </h1>
         </div>
 
-        {/* Step 1: Build a Style */}
-        <div className="mb-3 p-4 bg-white rounded-xl border border-gray-200">
-          <div className="flex items-baseline gap-3 mb-3">
-            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-brand-blue text-white text-xs font-bold">1</span>
-            <h2 className="text-sm font-semibold text-gray-900">Build a style</h2>
-            <span className="text-xs text-gray-500">(click multiple to combine)</span>
-          </div>
+        {/* Search Input - full width, left aligned */}
+        <div className="flex items-center gap-3 mb-10">
+          <Search className="w-5 h-5 text-gray-400 flex-shrink-0" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="meditation app inspired by greek mythology"
+            className="text-lg bg-transparent border-0 outline-none
+                       placeholder:text-gray-400 text-gray-900
+                       w-full"
+          />
+        </div>
 
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {VIBE_ORDER.map((vibeId) => {
-              const vibe = VIBE_DATA[vibeId];
-              const isSelected = selectedVibes.includes(vibeId);
-              return (
-                <button key={vibeId} data-tooltip-id="vibe-tooltips" data-tooltip-content={`${vibe.title}: ${vibe.examples.join(', ')}`}
-                  onClick={() => toggleVibe(vibeId)}
-                  className={`px-2 py-1 rounded-md border text-xs font-medium transition-all ${isSelected ? 'border-brand-blue bg-blue-50 text-brand-blue' : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'}`}
-                >{vibe.emoji} {vibe.name}</button>
-              );
-            })}
-          </div>
+        {/* Floating Tags */}
+        <div className="mb-10">
+          <FloatingTags onTagClick={handleTagClick} />
+        </div>
 
-          {/* Word Type and Language selectors */}
-          <div className="flex items-center gap-4 mb-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-600">Words:</span>
-              <div className="flex gap-1">
-                {WORD_TYPES.map((wt) => (
-                  <button key={wt.id} onClick={() => setSelectedWordType(wt.id)}
-                    data-tooltip-id="vibe-tooltips" data-tooltip-content={wt.description}
-                    className={`px-2 py-1 rounded text-xs font-medium transition-all ${selectedWordType === wt.id ? 'bg-brand-blue text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                  >{wt.label}</button>
-                ))}
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-600">Language:</span>
-              <select value={selectedLanguage} onChange={(e) => setSelectedLanguage(e.target.value)}
-                className="px-2 py-1 rounded border border-gray-300 text-xs bg-white text-gray-700 focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none"
-              >
-                {LANGUAGES.map((lang) => (
-                  <option key={lang.id} value={lang.id}>{lang.flag} {lang.label}</option>
-                ))}
-              </select>
-            </div>
-            <label className="flex items-center gap-1.5 cursor-pointer">
-              <input type="checkbox" checked={selectedNoCompounds} onChange={(e) => setSelectedNoCompounds(e.target.checked)}
-                className="w-3.5 h-3.5 rounded border-gray-300 text-brand-blue focus:ring-brand-blue" />
-              <span className="text-xs text-gray-600">Single word only</span>
-            </label>
+        {/* Featured Loading State */}
+        {featuredLoading && !hasSearched && (
+          <div className="text-center py-12">
+            <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-gray-500">Loading featured domains...</p>
           </div>
+        )}
 
-          {(selectedVibes.length > 0 || selectedLanguage !== 'any' || selectedWordType !== 'both' || selectedNoCompounds) && (
-            <div className="flex items-center justify-between p-2 bg-blue-50 rounded-lg border border-blue-200">
-              <span className="text-xs text-gray-900">
-                {[
-                  selectedVibes.length > 0 ? selectedVibes.map(v => `${VIBE_DATA[v].emoji} ${VIBE_DATA[v].name}`).join(' + ') : '',
-                  selectedLanguage !== 'any' ? `${LANGUAGES.find(l => l.id === selectedLanguage)?.flag} ${LANGUAGES.find(l => l.id === selectedLanguage)?.label}` : '',
-                  selectedWordType !== 'both' ? WORD_TYPES.find(w => w.id === selectedWordType)?.label : '',
-                  selectedNoCompounds ? '1️⃣ Single word' : '',
-                ].filter(Boolean).join(' + ')}
+        {/* Results */}
+        {results.length > 0 && (
+          <div>
+            {/* Header - different text for featured vs search results */}
+            <div className="mb-6">
+              <span className="text-base font-light tracking-wide text-orange-500">
+                {hasSearched ? 'Your brand starts here' : 'Featured domains'}
               </span>
-              <button onClick={saveAsStyle} className="px-2.5 py-1 bg-brand-blue text-white rounded text-xs font-medium hover:bg-blue-600 transition-colors">Add to list →</button>
-            </div>
-          )}
-        </div>
-
-        {/* Step 2: Your Search List */}
-        <div className="mb-3 p-4 bg-white rounded-xl border border-gray-200">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-brand-blue text-white text-xs font-bold">2</span>
-            <h2 className="text-sm font-semibold text-gray-900">Your search list</h2>
-            {styles.length > 0 && <span className="text-xs text-gray-500">{styles.length} style{styles.length !== 1 ? 's' : ''}</span>}
-          </div>
-
-          {styles.length === 0 ? (
-            <p className="text-xs text-gray-400 italic">No styles yet. Build one above.</p>
-          ) : (
-            <div className="flex flex-wrap gap-1.5">
-              {styles.map((style) => (
-                <div key={style.id} data-tooltip-id="style-tooltips" data-tooltip-content={style.description} className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded border border-gray-200">
-                  <span className="text-xs font-medium text-gray-800">{getStyleChipLabel(style)}</span>
-                  <button onClick={() => removeStyle(style.id)} className="text-gray-400 hover:text-red-500 transition-colors"><X className="w-3 h-3" /></button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Settings Row */}
-        <div className="mb-5 flex items-center gap-3 flex-wrap bg-white rounded-xl border border-gray-200 p-3">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-gray-600">TLDs:</span>
-            {['com', 'ai', 'io', 'app', 'dev'].map((tld) => (
-              <button key={tld} onClick={() => setSelectedTLDs(prev => prev.includes(tld) ? (prev.length > 1 ? prev.filter(t => t !== tld) : prev) : [...prev, tld])}
-                className={`px-1.5 py-0.5 rounded text-xs font-mono transition-all ${selectedTLDs.includes(tld) ? 'bg-brand-blue text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-              >.{tld}</button>
-            ))}
-          </div>
-          <div className="w-px h-5 bg-gray-200" />
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-600">Length:</span>
-            <RangeSlider min={3} max={15} value={charRange} onChange={setCharRange} />
-          </div>
-          <button onClick={() => generateDomains(false)} disabled={styles.length === 0 || !project.trim() || isGenerating}
-            className={`ml-auto px-4 py-1.5 rounded-lg font-bold text-xs transition-all flex items-center gap-1.5 ${styles.length > 0 && project.trim() && !isGenerating ? 'bg-gradient-to-r from-brand-blue to-brand-violet text-white hover:shadow-lg' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
-          >
-            {isGenerating ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Generating...</> : <><Sparkles className="w-3.5 h-3.5" />Generate</>}
-          </button>
-        </div>
-
-        {/* Results Section */}
-        {(domains.length > 0 || isGenerating) && (
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            {/* Header + Filters */}
-            <div className="flex flex-wrap items-center gap-3 mb-4">
-              <span className="text-sm text-gray-600">
-                <span className="font-bold text-gray-900">{filteredDomains.length}</span>
-                {filteredDomains.length !== domains.length && <span className="text-gray-500"> of {domains.length}</span>} domains
-              </span>
-              {loadingStyles.size > 0 && <span className="flex items-center gap-1.5 text-brand-blue text-xs"><span className="w-1.5 h-1.5 bg-brand-blue rounded-full animate-pulse"></span>Loading...</span>}
-
-              {domains.length > 0 && (
-                <>
-                  <span className="text-gray-300">|</span>
-                  <button onClick={() => toggleFilter('maxLength', 6)} className={`px-2 py-0.5 rounded text-xs transition-all ${activeFilters.maxLength === 6 ? 'bg-brand-blue text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>≤6</button>
-                  <button onClick={() => toggleFilter('maxLength', 8)} className={`px-2 py-0.5 rounded text-xs transition-all ${activeFilters.maxLength === 8 ? 'bg-brand-blue text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>≤8</button>
-                  {selectedTLDs.map(tld => (
-                    <button key={tld} onClick={() => toggleFilter('tldFilter', tld)} className={`px-2 py-0.5 rounded text-xs font-mono transition-all ${activeFilters.tldFilter === tld ? 'bg-brand-blue text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>.{tld}</button>
-                  ))}
-                  {resultStyles.size > 1 && Array.from(resultStyles.entries()).map(([styleId, { name }]) => (
-                    <button key={styleId} onClick={() => toggleFilter('styleId', styleId)} className={`px-2 py-0.5 rounded text-xs transition-all ${activeFilters.styleId === styleId ? 'bg-brand-blue text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{name}</button>
-                  ))}
-                  {Object.keys(activeFilters).length > 0 && <button onClick={() => setActiveFilters({})} className="text-xs text-gray-400 hover:text-gray-600">Clear</button>}
-                </>
-              )}
             </div>
 
-            {/* Domain Grid - 4 columns with aligned prices */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-              {filteredDomains.map((domain) => {
-                const saved = isSaved(domain.domain);
+            {/* Domain Grid - 3 columns with more spacing */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {results.filter(r => r && r.domain).map((domainResult) => {
+                const saved = isSaved(domainResult.domain);
+                const price = domainResult.domain.endsWith('.ai') ? 70 : 13;
                 return (
-                  <div key={domain.domain}
+                  <div
+                    key={domainResult.domain}
+                    onClick={() => handleDomainClick(domainResult)}
                     data-tooltip-id="domain-tooltips"
-                    data-tooltip-html={domain.analysis ? `<div class="text-xs"><div class="font-bold">${domain.domain}</div><div>Score: ${domain.analysis.overallScore.toFixed(1)}/10</div><div class="text-gray-400">${domain.analysis.meaning || ''}</div></div>` : ''}
-                    onClick={() => handleDomainClick(domain)}
-                    className={`flex items-center justify-between gap-1 px-2 py-1.5 rounded-lg cursor-pointer transition-all ${saved ? 'bg-pink-50 hover:bg-pink-100' : 'bg-gray-50 hover:bg-blue-50'}`}
+                    data-tooltip-html={domainResult.analysis
+                      ? `<div style="background: white; color: #111; padding: 12px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 280px;"><div style="font-weight: 600; color: #2563eb; font-family: monospace;">${domainResult.domain}</div><div style="margin-top: 4px;">Score: ${domainResult.analysis.overallScore.toFixed(1)}/10</div><div style="color: #666; margin-top: 4px; font-size: 12px;">${domainResult.analysis.meaning || ''}</div></div>`
+                      : `<div style="background: white; color: #111; padding: 12px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"><div style="font-weight: 600; color: #2563eb; font-family: monospace;">${domainResult.domain}</div><div style="color: #666; margin-top: 4px; font-size: 12px;">~$${price}/year • Click for details</div></div>`}
+                    className={`flex items-center justify-between gap-2 py-2 px-2 cursor-pointer transition-all hover:bg-gray-50 rounded-lg ${
+                      saved ? 'bg-orange-50' : ''
+                    }`}
                   >
-                    <div className="flex items-center gap-1 min-w-0">
-                      <span className="font-mono text-sm font-semibold text-gray-900 truncate">{domain.domain}</span>
-                      <span className="text-xs font-bold text-brand-blue flex-shrink-0">{domain.analysis ? domain.analysis.overallScore.toFixed(1) : '—'}</span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="font-mono text-base text-blue-600 truncate">
+                        {domainResult.domain}
+                      </span>
+                      {domainResult.analysis && (
+                        <span className="text-sm font-medium text-orange-500 flex-shrink-0">
+                          {domainResult.analysis.overallScore.toFixed(1)}
+                        </span>
+                      )}
                     </div>
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      <a href={`https://www.namecheap.com/domains/registration/results/?domain=${domain.domain}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
-                        className="px-2 py-0.5 bg-brand-blue text-white text-xs font-bold rounded text-center hover:bg-blue-600 transition-colors"
-                      >${domain.price || (domain.domain.endsWith('.ai') ? 70 : 13)}</a>
-                      <button onClick={(e) => { e.stopPropagation(); toggleSave(domain); }} className={`transition-colors ${saved ? 'text-pink-500' : 'text-gray-300 hover:text-pink-500'}`}>
-                        <Heart className={`w-4 h-4 ${saved ? 'fill-pink-500' : ''}`} />
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <a
+                        href={`https://www.namecheap.com/domains/registration/results/?domain=${domainResult.domain}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-sm text-gray-400 hover:text-orange-500 transition-colors"
+                      >
+                        ${domainResult.domain.endsWith('.ai') ? 70 : 13}
+                      </a>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleSave(domainResult.domain); }}
+                        className={`transition-colors ${saved ? 'text-orange-500' : 'text-gray-300 hover:text-orange-500'}`}
+                      >
+                        <Heart className={`w-5 h-5 ${saved ? 'fill-orange-500' : ''}`} />
                       </button>
                     </div>
                   </div>
                 );
               })}
             </div>
-
-            {domains.length > 0 && (
-              <div className="mt-4 text-center">
-                {isGenerating ? (
-                  <div className="flex items-center justify-center gap-2 text-gray-500">
-                    <div className="w-4 h-4 border-2 border-brand-blue border-t-transparent rounded-full animate-spin" />
-                    <span className="text-xs font-medium">Loading more domains...</span>
-                  </div>
-                ) : (
-                  <button onClick={() => generateDomains(true)} className="px-4 py-2 text-xs font-medium text-gray-600 hover:text-brand-blue transition-colors">+ Load More</button>
-                )}
-              </div>
-            )}
           </div>
         )}
 
-        {domains.length === 0 && !isGenerating && (
-          <div className="text-center py-10 text-gray-500">
-            <Sparkles className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-            <p className="text-sm font-medium">Ready to find your perfect domain</p>
-            <p className="text-xs">Build a style, add it to your list, then generate!</p>
+        {/* Loading State */}
+        {loading && (
+          <div className="text-center py-12">
+            <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-gray-500">Finding perfect domains...</p>
           </div>
         )}
-      </main>
+      </div>
 
       {/* Saved Domains Tray */}
       {savedDomains.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
-          <div className="max-w-5xl mx-auto px-6 py-2">
+          <div className="max-w-4xl mx-auto px-4 py-2">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1.5">
-                <Heart className="w-4 h-4 text-pink-500 fill-pink-500" />
-                <span className="font-semibold text-gray-900 text-xs">Saved ({savedDomains.length})</span>
+                <Heart className="w-4 h-4 text-orange-500 fill-orange-500" />
+                <span className="text-sm font-medium text-gray-600">{savedDomains.length} saved</span>
               </div>
-              <div className="flex-1 flex items-center gap-1.5 overflow-x-auto">
-                {savedDomains.map((domain) => (
-                  <div key={domain.domain} className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded flex-shrink-0">
-                    <span className="font-mono text-xs text-gray-900">{domain.domain}</span>
-                    <button onClick={() => toggleSave(domain)} className="text-gray-400 hover:text-red-500 transition-colors"><X className="w-3 h-3" /></button>
-                  </div>
+              <div className="flex gap-2 overflow-x-auto">
+                {savedDomains.map(domain => (
+                  <span key={domain} className="px-2 py-1 bg-gray-100 rounded-full text-xs font-mono text-gray-700">
+                    {domain}
+                  </span>
                 ))}
               </div>
-              <button className="px-3 py-1 bg-gradient-to-r from-brand-blue to-brand-violet text-white rounded text-xs font-semibold hover:shadow-lg transition-all">Compare →</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal */}
-      {selectedDomain && (
-        loadingAnalysis ? (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl p-8 text-center shadow-2xl">
-              <Loader2 className="w-12 h-12 animate-spin text-brand-blue mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Analyzing {selectedDomain.domain}</h3>
-              <p className="text-sm text-gray-600">Getting AI insights...</p>
-            </div>
-          </div>
-        ) : selectedDomain.analysis ? (
-          <DomainDetailsModal domain={selectedDomain.domain} price={selectedDomain.price || 13} analysis={selectedDomain.analysis}
-            onClose={() => setSelectedDomain(null)}
-            onBuy={() => window.open(`https://www.namecheap.com/domains/registration/results/?domain=${selectedDomain.domain}`, '_blank')}
-          />
-        ) : null
-      )}
+      {/* Tooltips */}
+      <Tooltip
+        id="domain-tooltips"
+        className="z-50"
+        style={{ backgroundColor: 'transparent', padding: 0, border: 'none' }}
+        opacity={1}
+      />
 
-      {/* Global Tooltips */}
-      <Tooltip id="vibe-tooltips" place="top" className="!bg-gray-900 !text-white !rounded-lg !px-3 !py-2 !text-xs z-50" />
-      <Tooltip id="style-tooltips" place="top" className="!bg-gray-900 !text-white !rounded-lg !px-3 !py-2 !text-xs z-50" />
-      <Tooltip id="domain-tooltips" place="top" className="!bg-gray-900 !text-white !rounded-lg !px-3 !py-2 z-50" />
+      {/* Domain Details Modal */}
+      {selectedDomain && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setSelectedDomain(null)}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-md w-full p-6 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setSelectedDomain(null)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Domain name */}
+            <h2 className="text-2xl font-bold text-blue-600 font-mono mb-4">
+              {selectedDomain.domain}
+            </h2>
+
+            {/* Analysis loading or content */}
+            {analyzingDomain ? (
+              <div className="py-8 text-center">
+                <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-gray-500">Analyzing domain...</p>
+              </div>
+            ) : selectedDomain.analysis ? (
+              <div className="space-y-4">
+                {/* Overall Score */}
+                <div className="flex items-center gap-4">
+                  <div className="text-4xl font-bold text-orange-500">
+                    {selectedDomain.analysis.overallScore.toFixed(1)}
+                  </div>
+                  <div className="text-gray-500 text-sm">/ 10 overall score</div>
+                </div>
+
+                {/* Meaning */}
+                {selectedDomain.analysis.meaning && (
+                  <p className="text-gray-600">{selectedDomain.analysis.meaning}</p>
+                )}
+
+                {/* Score breakdown */}
+                {selectedDomain.analysis.scores && (
+                  <div className="grid grid-cols-3 gap-4 pt-4 border-t">
+                    <div className="text-center">
+                      <div className="text-lg font-semibold text-gray-900">
+                        {(selectedDomain.analysis.scores.memorability ?? 0).toFixed(1)}
+                      </div>
+                      <div className="text-xs text-gray-500">Memorability</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-semibold text-gray-900">
+                        {(selectedDomain.analysis.scores.brandability ?? selectedDomain.analysis.scores.pronounceability ?? 0).toFixed(1)}
+                      </div>
+                      <div className="text-xs text-gray-500">Brandability</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-semibold text-gray-900">
+                        {(selectedDomain.analysis.scores.relevance ?? selectedDomain.analysis.scores.uniqueness ?? 0).toFixed(1)}
+                      </div>
+                      <div className="text-xs text-gray-500">Relevance</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-gray-500 py-4">Click to load analysis...</p>
+            )}
+
+            {/* Price and Buy button */}
+            <div className="mt-6 pt-4 border-t flex items-center justify-between">
+              <div className="text-gray-600">
+                <span className="text-2xl font-bold text-gray-900">
+                  ${selectedDomain.domain.endsWith('.ai') ? 70 : 13}
+                </span>
+                <span className="text-sm">/year</span>
+              </div>
+              <a
+                href={`https://www.namecheap.com/domains/registration/results/?domain=${selectedDomain.domain}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-full font-medium transition-colors"
+              >
+                Buy Now
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            </div>
+
+            {/* Save button */}
+            <button
+              onClick={() => toggleSave(selectedDomain.domain)}
+              className={`mt-4 w-full py-2.5 rounded-full border transition-colors flex items-center justify-center gap-2 ${
+                isSaved(selectedDomain.domain)
+                  ? 'bg-orange-50 border-orange-200 text-orange-600'
+                  : 'border-gray-200 text-gray-600 hover:border-orange-200 hover:text-orange-600'
+              }`}
+            >
+              <Heart className={`w-4 h-4 ${isSaved(selectedDomain.domain) ? 'fill-orange-500' : ''}`} />
+              {isSaved(selectedDomain.domain) ? 'Saved' : 'Save for later'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
