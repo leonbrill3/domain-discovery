@@ -20,7 +20,7 @@ const prisma = new PrismaClient();
 const CHECKS_PER_MINUTE = 30;
 const DELAY_MS = Math.ceil(60000 / CHECKS_PER_MINUTE); // ~2000ms between checks
 const BATCH_SIZE = 10;
-const TLD = 'ai';
+const TLD = process.env.CHECK_TLD || 'ai'; // Set CHECK_TLD=com for .com domains
 
 // RDAP endpoints by TLD
 const RDAP_ENDPOINTS: Record<string, string> = {
