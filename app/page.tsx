@@ -152,6 +152,10 @@ export default function NewSearchPage() {
     }
   };
 
+  // Client-side compound generation (IDS-style instant suggestions)
+  const INSTANT_SUFFIXES = ['hub', 'app', 'flow', 'ly', 'ify', 'io', 'hq', 'go', 'now', 'pro'];
+  const INSTANT_PREFIXES = ['get', 'try', 'my', 'go', 'the'];
+
   // Handle query change - INSTANT display + pool search
   const handleQueryChange = (newQuery: string) => {
     setQuery(newQuery);
@@ -162,19 +166,53 @@ export default function NewSearchPage() {
     }
 
     if (newQuery.length >= 2) {
-      // INSTANT (0ms) - Show direct domain immediately (client-side string concat)
+      // INSTANT (0ms) - Show direct domain + compounds immediately (client-side string concat)
       const cleaned = newQuery.replace(/\s+/g, '').toLowerCase();
       if (cleaned.length >= 2) {
         const directDomains: DomainResult[] = [
-          { domain: `${cleaned}.ai`, verified: false, verifying: true },
-          { domain: `${cleaned}.com`, verified: false, verifying: true },
-          { domain: `${cleaned}.io`, verified: false, verifying: true },
+          // Direct matches
+          { domain: `${cleaned}.ai`, verified: false, verifying: true, quickScore: getQuickScore(`${cleaned}.ai`) },
+          { domain: `${cleaned}.com`, verified: false, verifying: true, quickScore: getQuickScore(`${cleaned}.com`) },
+          { domain: `${cleaned}.io`, verified: false, verifying: true, quickScore: getQuickScore(`${cleaned}.io`) },
         ];
-        setResults(directDomains);
+
+        // Generate compound suggestions (IDS-style)
+        const compounds: DomainResult[] = [];
+        const seen = new Set(directDomains.map(d => d.domain));
+
+        // Add suffix compounds: yogahub.ai, yogaflow.ai, etc.
+        for (const suffix of INSTANT_SUFFIXES) {
+          const compound = `${cleaned}${suffix}`;
+          if (compound.length <= 15) {
+            const domain = `${compound}.ai`;
+            if (!seen.has(domain)) {
+              seen.add(domain);
+              compounds.push({ domain, verified: false, verifying: true, quickScore: getQuickScore(domain) });
+            }
+          }
+        }
+
+        // Add prefix compounds: getyoga.ai, tryyoga.ai, etc.
+        for (const prefix of INSTANT_PREFIXES) {
+          const compound = `${prefix}${cleaned}`;
+          if (compound.length <= 15) {
+            const domain = `${compound}.ai`;
+            if (!seen.has(domain)) {
+              seen.add(domain);
+              compounds.push({ domain, verified: false, verifying: true, quickScore: getQuickScore(domain) });
+            }
+          }
+        }
+
+        // Show direct + top 6 compounds (sorted by quickScore)
+        compounds.sort((a, b) => (b.quickScore || 0) - (a.quickScore || 0));
+        const allDomains = [...directDomains, ...compounds.slice(0, 6)];
+
+        setResults(allDomains);
         setHasSearched(true);
 
-        // Start background verification for direct domains
-        verifyDomains(directDomains.map(d => d.domain));
+        // Start background verification for ALL domains
+        verifyDomains(allDomains.map(d => d.domain));
       }
 
       // ALSO search pool (50ms debounce) and merge results
