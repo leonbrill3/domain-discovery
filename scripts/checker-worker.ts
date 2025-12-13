@@ -150,7 +150,7 @@ function loadWordList(): string[] {
     if (fs.existsSync(p)) {
       console.log(`[Checker] Loading words from: ${p}`);
       const content = fs.readFileSync(p, 'utf-8');
-      return content.split('\n').filter(w => w.length >= 4 && w.length <= 7);
+      return content.split('\n').filter(w => w.length >= 3 && w.length <= 15);
     }
   }
 
