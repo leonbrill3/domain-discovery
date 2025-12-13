@@ -47,6 +47,30 @@ const PREFIXES = [
   'your', 'our', 'all', 'any', 'every'
 ];
 
+// Middle words for 3-word compounds (prefix + middle + suffix)
+// Example: instant + domain + search = instantdomainsearch
+const MIDDLE_WORDS = [
+  // Core domain/tech
+  'domain', 'name', 'brand', 'site', 'web', 'app', 'data', 'cloud', 'code', 'tech',
+  // Action words
+  'search', 'find', 'seek', 'hunt', 'scout', 'match', 'pick', 'grab', 'spot', 'check',
+  // Business
+  'market', 'trade', 'deal', 'shop', 'store', 'sale', 'buy', 'sell', 'price', 'cost',
+  // Quality
+  'best', 'top', 'prime', 'elite', 'smart', 'fast', 'quick', 'easy', 'free', 'pro'
+];
+
+// Short prefixes that work well in 3-word compounds
+const THREE_WORD_PREFIXES = [
+  'instant', 'quick', 'fast', 'smart', 'super', 'mega', 'ultra', 'hyper', 'auto', 'easy',
+  'free', 'best', 'top', 'pro', 'my', 'get', 'try', 'go', 'the', 'all'
+];
+
+// Short suffixes that work well in 3-word compounds
+const THREE_WORD_SUFFIXES = [
+  'now', 'go', 'hub', 'app', 'pro', 'hq', 'io', 'ai', 'ly', 'er', 'ify', 'lab', 'bot'
+];
+
 // RDAP endpoints by TLD
 const RDAP_ENDPOINTS: Record<string, string> = {
   'ai': 'https://rdap.identitydigital.services/rdap/domain/',
@@ -214,6 +238,31 @@ function hasTripleLetter(word: string): boolean {
 }
 
 /**
+ * Generate 3-word compounds (prefix + middle + suffix)
+ * Example: instant + domain + search = instantdomainsearch
+ *
+ * Only generates combinations <= 20 chars for domain-friendly lengths
+ */
+function generateThreeWordCompounds(): string[] {
+  const compounds: string[] = [];
+
+  for (const prefix of THREE_WORD_PREFIXES) {
+    for (const middle of MIDDLE_WORDS) {
+      for (const suffix of THREE_WORD_SUFFIXES) {
+        const compound = prefix + middle + suffix;
+        // Keep reasonable length (max 20 chars) and avoid ugly patterns
+        if (compound.length <= 20 && compound.length >= 8 && !hasTripleLetter(compound)) {
+          compounds.push(compound);
+        }
+      }
+    }
+  }
+
+  console.log(`[Compound] Generated ${compounds.length} 3-word combinations`);
+  return compounds;
+}
+
+/**
  * Get base words from scored pool
  */
 async function getBaseWords(): Promise<string[]> {
@@ -359,7 +408,60 @@ async function main() {
     }
   }
 
-  console.log('\n✅ Finished checking all compounds!');
+  console.log('\n✅ Finished checking 2-word compounds!');
+
+  // --- PHASE 2: 3-word compounds ---
+  console.log('\n🔗 Starting 3-word compound check...');
+  const threeWordCompounds = generateThreeWordCompounds();
+  console.log(`🎯 Total 3-word compounds to check: ${threeWordCompounds.length.toLocaleString()}`);
+  // Math: 20 prefixes × 40 middles × 13 suffixes = ~10,400 combinations
+
+  let threeWordChecked = 0;
+  let threeWordAvailable = 0;
+  let threeWordTaken = 0;
+
+  for (const compound of threeWordCompounds) {
+    const domain = `${compound}.${TLD}`;
+
+    // Check if already in database
+    const existing = await prisma.availableDomain.findUnique({
+      where: { domain }
+    });
+
+    if (existing) {
+      console.log(`  ⏭️  ${domain} (already in pool)`);
+      continue;
+    }
+
+    // Check availability
+    const result = await checkDomainRDAP(domain);
+    threeWordChecked++;
+
+    if (result.available) {
+      const added = await addToPool(compound, TLD, true);
+      if (added) {
+        threeWordAvailable++;
+        console.log(`  ✅ ${domain} (AVAILABLE - added to pool)`);
+      }
+    } else {
+      threeWordTaken++;
+      console.log(`  ❌ ${domain} (taken)`);
+    }
+
+    // Rate limiting
+    await new Promise(resolve => setTimeout(resolve, DELAY_MS));
+
+    // Progress every 50 checks
+    if (threeWordChecked % 50 === 0) {
+      const pct = (threeWordChecked / threeWordCompounds.length * 100).toFixed(1);
+      console.log(`\n📊 3-word Progress: ${threeWordChecked}/${threeWordCompounds.length} (${pct}%) | Available: ${threeWordAvailable} | Taken: ${threeWordTaken}\n`);
+    }
+  }
+
+  console.log('\n✅ Finished checking all 3-word compounds!');
+  console.log(`   Total checked: ${threeWordChecked}`);
+  console.log(`   Available: ${threeWordAvailable}`);
+  console.log(`   Taken: ${threeWordTaken}`);
 
   // Keep running to handle new base words
   while (true) {
