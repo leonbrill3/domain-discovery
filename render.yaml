@@ -1,3 +1,11 @@
+databases:
+  - name: domainseek-db
+    databaseName: domainseek
+    user: domainseek
+    plan: free
+    region: oregon
+    postgresMajorVersion: 16
+
 services:
   - type: web
     name: domainseek-ai
@@ -14,3 +22,7 @@ services:
         value: DomainSeek
       - key: ANTHROPIC_API_KEY
         sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: domainseek-db
+          property: connectionString

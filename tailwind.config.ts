@@ -203,6 +203,24 @@ const config: Config = {
           '0%, 100%': { opacity: '0', transform: 'scale(0)' },
           '50%': { opacity: '1', transform: 'scale(1)' },
         },
+
+        // Infinite scroll left (for floating tags) - smooth GPU-accelerated
+        'scroll-left': {
+          '0%': { transform: 'translate3d(0, 0, 0)' },
+          '100%': { transform: 'translate3d(-50%, 0, 0)' },
+        },
+
+        // Infinite scroll right (for floating tags) - smooth GPU-accelerated
+        'scroll-right': {
+          '0%': { transform: 'translate3d(-50%, 0, 0)' },
+          '100%': { transform: 'translate3d(0, 0, 0)' },
+        },
+
+        // Drift animation - items float from right to left across screen
+        'drift': {
+          '0%': { transform: 'translateX(100vw)' },
+          '100%': { transform: 'translateX(-100%)' },
+        },
       },
 
       animation: {
@@ -220,6 +238,9 @@ const config: Config = {
         'floatUp': 'floatUp 1s ease-out forwards',
         'checkmark': 'checkmark 0.5s ease-out forwards',
         'sparkle': 'sparkle 1s ease-in-out infinite',
+        'scroll-left': 'scroll-left linear infinite',
+        'scroll-right': 'scroll-right linear infinite',
+        'drift': 'drift linear infinite',
       },
 
       backgroundImage: {

@@ -120,6 +120,41 @@ model RateLimit {
   @@map("rate_limits")
 }
 
+// Pre-checked available domains - the domain pool
+// Populated by bulk availability checker script
+model AvailableDomain {
+  id        String   @id @default(cuid())
+  domain    String   @unique  // Full domain: "zova.ai"
+  word      String             // Word part only: "zova"
+  tld       String             // TLD: "ai"
+  length    Int                // Word length: 4
+  pattern   String?            // Phonetic pattern: "CVCV"
+  checkedAt DateTime @default(now())
+
+  @@index([tld])
+  @@index([length])
+  @@index([pattern])
+  @@index([tld, length])
+  @@index([checkedAt])
+  @@map("available_domains")
+}
+
+// Track check progress for bulk imports
+model CheckProgress {
+  id             String    @id @default(cuid())
+  tld            String    @unique
+  totalChecked   Int       @default(0)
+  availableCount Int       @default(0)
+  takenCount     Int       @default(0)
+  errorCount     Int       @default(0)
+  lastWord       String?
+  startedAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  completedAt    DateTime?
+
+  @@map("check_progress")
+}
+
 // Analytics snapshots - daily/hourly aggregates
 model AnalyticsSnapshot {
   id                String   @id @default(cuid())

@@ -81,6 +81,7 @@ interface SearchStyle {
   description: string;
   wordType: WordType;
   language: string;
+  noCompounds: boolean;
 }
 
 interface DomainResult {
@@ -115,10 +116,13 @@ function getStyleChipLabel(style: SearchStyle): string {
   }
   if (style.language && style.language !== 'any') {
     const lang = LANGUAGES.find(l => l.id === style.language);
-    if (lang) parts.push(`${lang.flag}`);
+    if (lang) parts.push(`${lang.flag}${lang.label}`);
   }
   if (style.wordType && style.wordType !== 'both') {
-    parts.push(style.wordType === 'real' ? '📖' : '✨');
+    parts.push(style.wordType === 'real' ? '📖Real' : '✨Made-up');
+  }
+  if (style.noCompounds) {
+    parts.push('1️⃣Single');
   }
   return parts.join(' ') || 'Custom';
 }
@@ -171,6 +175,7 @@ export default function HomePage() {
   const [selectedVibes, setSelectedVibes] = useState<ThemeId[]>([]);
   const [selectedWordType, setSelectedWordType] = useState<WordType>('both');
   const [selectedLanguage, setSelectedLanguage] = useState('any');
+  const [selectedNoCompounds, setSelectedNoCompounds] = useState(false);
   const [selectedTLDs, setSelectedTLDs] = useState<string[]>(['com', 'ai']);
   const [charRange, setCharRange] = useState<[number, number]>([4, 12]);
   const [domains, setDomains] = useState<DomainResult[]>([]);
@@ -211,21 +216,23 @@ export default function HomePage() {
   };
 
   const saveAsStyle = () => {
-    if (selectedVibes.length === 0 && selectedLanguage === 'any' && selectedWordType === 'both') return;
+    if (selectedVibes.length === 0 && selectedLanguage === 'any' && selectedWordType === 'both' && !selectedNoCompounds) return;
     const langLabel = LANGUAGES.find(l => l.id === selectedLanguage)?.label || '';
     const wordLabel = WORD_TYPES.find(w => w.id === selectedWordType)?.label || '';
     const vibeDesc = selectedVibes.length > 0 ? getStyleDescription(selectedVibes) : '';
-    const parts = [vibeDesc, selectedLanguage !== 'any' ? langLabel : '', selectedWordType !== 'both' ? wordLabel : ''].filter(Boolean);
+    const parts = [vibeDesc, selectedLanguage !== 'any' ? langLabel : '', selectedWordType !== 'both' ? wordLabel : '', selectedNoCompounds ? 'Single Word' : ''].filter(Boolean);
     setStyles(prev => [...prev, {
       id: `style-${Date.now()}`,
       vibes: [...selectedVibes],
       description: parts.join(' + ') || 'Custom',
       wordType: selectedWordType,
       language: selectedLanguage,
+      noCompounds: selectedNoCompounds,
     }]);
     setSelectedVibes([]);
     setSelectedWordType('both');
     setSelectedLanguage('any');
+    setSelectedNoCompounds(false);
   };
 
   const removeStyle = (styleId: string) => setStyles(prev => prev.filter(s => s.id !== styleId));
@@ -250,6 +257,7 @@ export default function HomePage() {
           tlds: selectedTLDs,
           wordType: style.wordType,
           language: style.language,
+          noCompounds: style.noCompounds,
         }),
       });
       const data = await response.json();
@@ -407,15 +415,21 @@ export default function HomePage() {
                 ))}
               </select>
             </div>
+            <label className="flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" checked={selectedNoCompounds} onChange={(e) => setSelectedNoCompounds(e.target.checked)}
+                className="w-3.5 h-3.5 rounded border-gray-300 text-brand-blue focus:ring-brand-blue" />
+              <span className="text-xs text-gray-600">Single word only</span>
+            </label>
           </div>
 
-          {(selectedVibes.length > 0 || selectedLanguage !== 'any' || selectedWordType !== 'both') && (
+          {(selectedVibes.length > 0 || selectedLanguage !== 'any' || selectedWordType !== 'both' || selectedNoCompounds) && (
             <div className="flex items-center justify-between p-2 bg-blue-50 rounded-lg border border-blue-200">
               <span className="text-xs text-gray-900">
                 {[
                   selectedVibes.length > 0 ? selectedVibes.map(v => `${VIBE_DATA[v].emoji} ${VIBE_DATA[v].name}`).join(' + ') : '',
                   selectedLanguage !== 'any' ? `${LANGUAGES.find(l => l.id === selectedLanguage)?.flag} ${LANGUAGES.find(l => l.id === selectedLanguage)?.label}` : '',
                   selectedWordType !== 'both' ? WORD_TYPES.find(w => w.id === selectedWordType)?.label : '',
+                  selectedNoCompounds ? '1️⃣ Single word' : '',
                 ].filter(Boolean).join(' + ')}
               </span>
               <button onClick={saveAsStyle} className="px-2.5 py-1 bg-brand-blue text-white rounded text-xs font-medium hover:bg-blue-600 transition-colors">Add to list →</button>

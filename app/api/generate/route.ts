@@ -22,6 +22,7 @@ const GenerateRequestSchema = z.object({
   charMax: z.number().min(3).max(20).optional().default(10), // Maximum characters (before TLD)
   wordType: z.enum(['real', 'madeup', 'both']).optional().default('both'), // Real dictionary words vs made-up
   language: z.string().optional().default('any'), // Language inspiration
+  noCompounds: z.boolean().optional().default(false), // Single words only, no compounds
 });
 
 export async function POST(request: NextRequest) {
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     // Validate request
     const validated = GenerateRequestSchema.parse(body);
-    let { project, themes, countPerTheme, tlds, charMin, charMax, wordType, language } = validated;
+    let { project, themes, countPerTheme, tlds, charMin, charMax, wordType, language, noCompounds } = validated;
 
     // Interpret user input - detect commands like "4 letter word" or "something catchy"
     const interpreted = await interpretUserInput(project);
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log(`[API/Generate] Request: ${themes.length} themes × ${countPerTheme} domains (chars: ${charMin}-${charMax})`);
+    console.log(`[API/Generate] Request: ${themes.length} themes × ${countPerTheme} domains (chars: ${charMin}-${charMax}, wordType: ${wordType}, language: ${language}, noCompounds: ${noCompounds})`);
 
     // Generate domains using Claude
     const startTime = Date.now();
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
       project,
       themes as ThemeId[],
       countPerTheme,
-      { tlds, charMin, charMax, wordType, language } // Pass user constraints
+      { tlds, charMin, charMax, wordType, language, noCompounds } // Pass user constraints
     );
 
     // Flatten all domains for batch checking
