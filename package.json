@@ -12,6 +12,7 @@
     "prisma:studio": "prisma studio",
     "test:apis": "tsx scripts/test-apis.ts",
     "worker": "tsx scripts/worker.ts",
+    "checker": "tsx scripts/checker-worker.ts",
     "score": "tsx scripts/score-domains.ts"
   },
   "dependencies": {
