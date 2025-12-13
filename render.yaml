@@ -26,3 +26,33 @@ services:
         fromDatabase:
           name: domainseek-db
           property: connectionString
+
+  - type: worker
+    name: domainseek-worker
+    runtime: node
+    plan: starter
+    region: oregon
+    branch: main
+    buildCommand: npm install && npx prisma generate
+    startCommand: npm run worker
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: domainseek-db
+          property: connectionString
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+  - type: worker
+    name: domainseek-checker
+    runtime: node
+    plan: starter
+    region: oregon
+    branch: main
+    buildCommand: npm install && npx prisma generate
+    startCommand: npm run checker
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: domainseek-db
+          property: connectionString
