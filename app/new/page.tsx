@@ -299,10 +299,10 @@ export default function NewSearchPage() {
       <Tooltip id="domain-tooltips" className="z-50" />
 
       {/* Domain Details Modal */}
-      {selectedDomain && (
+      {selectedDomain && selectedDomain.analysis && (
         <DomainDetailsModal
           domain={selectedDomain.domain}
-          analysis={selectedDomain.analysis || null}
+          analysis={selectedDomain.analysis}
           isLoading={loadingAnalysis}
           onClose={() => setSelectedDomain(null)}
         />
