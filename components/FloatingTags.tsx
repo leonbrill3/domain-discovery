@@ -109,7 +109,7 @@ function FloatingTag({
   return (
     <button
       onClick={() => onClick(currentText)}
-      className="absolute whitespace-nowrap text-slate-500 hover:text-slate-300 text-base cursor-pointer transition-colors duration-200"
+      className="absolute whitespace-nowrap text-gray-700 hover:text-gray-900 text-lg font-light cursor-pointer transition-colors duration-200"
       style={{
         left: item.x,
         top: y,
@@ -241,8 +241,8 @@ export function FloatingTags({ onTagClick }: FloatingTagsProps) {
   return (
     <div ref={containerRef} className="relative w-full h-28 overflow-hidden">
       {/* Gradient fade edges */}
-      <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-slate-950 to-transparent z-10" />
-      <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-slate-950 to-transparent z-10" />
+      <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-white to-transparent z-10" />
+      <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-white to-transparent z-10" />
 
       {items.map((item) => {
         const isRotating = Array.isArray(item.text);
@@ -286,7 +286,7 @@ export function RotatingText({ words = ROTATING_WORDS }: { words?: string[] }) {
             : 'opacity-100 transform translate-y-0'
         }`}
       >
-        <span className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+        <span className="bg-gradient-to-r from-orange-500 to-orange-400 bg-clip-text text-transparent">
           {words[currentIndex]}
         </span>
       </span>

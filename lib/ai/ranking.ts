@@ -113,7 +113,7 @@ Return ONLY valid JSON. Rank domains from best to worst.`;
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250929',
+      model: 'claude-3-5-haiku-20241022',  // Fast model for quick analysis
       max_tokens: 4000,
       temperature: 0.3,  // Low temperature for consistent analysis
       messages: [{
@@ -130,7 +130,14 @@ Return ONLY valid JSON. Rank domains from best to worst.`;
       throw new Error('Failed to parse AI response');
     }
 
-    const analyses: DomainAnalysis[] = JSON.parse(jsonMatch[0]);
+    // Try to clean the JSON - fix common issues
+    let jsonStr = jsonMatch[0];
+    // Replace unescaped newlines in strings
+    jsonStr = jsonStr.replace(/:\s*"([^"]*)[\n\r]+([^"]*)"(?=\s*[,}])/g, ': "$1 $2"');
+    // Replace control characters
+    jsonStr = jsonStr.replace(/[\x00-\x1F\x7F]/g, (c) => c === '\n' || c === '\r' || c === '\t' ? ' ' : '');
+
+    const analyses: DomainAnalysis[] = JSON.parse(jsonStr);
 
     console.log(`[AI/Ranking] Analyzed and ranked ${analyses.length} domains`);
 
@@ -138,7 +145,35 @@ Return ONLY valid JSON. Rank domains from best to worst.`;
 
   } catch (error) {
     console.error('[AI/Ranking] Error:', error);
-    throw error;
+
+    // Fallback: Return quick scores for all domains
+    console.log(`[AI/Ranking] Falling back to quick scores for ${domains.length} domains`);
+    return domains.map((domain) => {
+      const score = calculateQuickBrandScore(domain);
+      const nameWithoutTld = domain.split('.')[0];
+      return {
+        domain,
+        overallScore: score,
+        meaning: `"${nameWithoutTld}" is a brandable name`,
+        relevance: `Could work well for ${project}`,
+        whyRanked: 'Scored based on length, pronounceability, and memorability',
+        scores: {
+          memorability: score,
+          pronounceability: score,
+          uniqueness: score * 0.9,
+          professionalism: score * 0.95,
+          seoValue: score * 0.85,
+          brandability: score,
+          relevance: score * 0.9
+        },
+        pronunciation: {
+          phonetic: nameWithoutTld.toUpperCase(),
+          syllables: Math.ceil(nameWithoutTld.length / 3),
+          easyToSay: nameWithoutTld.length <= 8
+        },
+        logoStyles: ['Modern', 'Clean', 'Bold']
+      } as DomainAnalysis;
+    });
   }
 }
 

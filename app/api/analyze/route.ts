@@ -9,7 +9,7 @@ import { rankAndAnalyzeDomains } from '@/lib/ai/ranking';
 import { z } from 'zod';
 
 const AnalyzeRequestSchema = z.object({
-  domains: z.array(z.string()).min(1).max(20),
+  domains: z.array(z.any()),
   project: z.string().min(1),
 });
 
@@ -17,7 +17,16 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const validated = AnalyzeRequestSchema.parse(body);
-    const { domains, project } = validated;
+    // Filter out null/undefined values and ensure all are strings
+    const domains = validated.domains.filter((d): d is string => typeof d === 'string' && d.length > 0);
+    const { project } = validated;
+
+    if (domains.length === 0) {
+      return NextResponse.json(
+        { error: 'No valid domains provided' },
+        { status: 400 }
+      );
+    }
 
     console.log(`[API/Analyze] Analyzing ${domains.length} domains for project: ${project}`);
 
