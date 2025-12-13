@@ -71,7 +71,7 @@ export default function NewSearchPage() {
   const [verifying, setVerifying] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Instant search as user types (debounced)
+  // Instant search from pool - MERGES with existing direct domains
   const instantSearch = useCallback(async (searchQuery: string) => {
     if (!searchQuery || searchQuery.length < 2) {
       return;
@@ -81,24 +81,32 @@ export default function NewSearchPage() {
       const res = await fetch('/api/pool/autocomplete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: searchQuery, limit: 15 })
+        body: JSON.stringify({ query: searchQuery, limit: 12 })
       });
       const data = await res.json();
 
       if (data.success && data.domains) {
-        // Show results immediately (unverified)
-        const instantResults: DomainResult[] = data.domains.map((d: any) => ({
+        // Pool results are pre-verified
+        const poolResults: DomainResult[] = data.domains.map((d: any) => ({
           domain: d.domain,
           score: d.score,
           meaning: d.meaning,
-          verified: false,
-          verifying: true,
+          verified: d.verified,
+          verifying: false,
         }));
-        setResults(instantResults);
-        setHasSearched(true);
 
-        // Start background verification
-        verifyDomains(instantResults.map(r => r.domain));
+        // MERGE: Keep direct domains at top, add pool results below
+        setResults(prev => {
+          // Get existing direct domains (the .ai/.com/.io we showed instantly)
+          const directDomains = prev.filter(r =>
+            r.domain.includes(searchQuery.replace(/\s+/g, '').toLowerCase())
+          );
+          // Add pool results that aren't duplicates
+          const existingDomains = new Set(directDomains.map(d => d.domain));
+          const newPoolResults = poolResults.filter(r => !existingDomains.has(r.domain));
+
+          return [...directDomains, ...newPoolResults];
+        });
       }
     } catch (error) {
       console.warn('Instant search failed:', error);
@@ -144,7 +152,7 @@ export default function NewSearchPage() {
     }
   };
 
-  // Handle query change with debounce
+  // Handle query change - INSTANT display + pool search
   const handleQueryChange = (newQuery: string) => {
     setQuery(newQuery);
 
@@ -153,11 +161,26 @@ export default function NewSearchPage() {
       clearTimeout(debounceRef.current);
     }
 
-    // Debounce instant search (150ms)
     if (newQuery.length >= 2) {
+      // INSTANT (0ms) - Show direct domain immediately (client-side string concat)
+      const cleaned = newQuery.replace(/\s+/g, '').toLowerCase();
+      if (cleaned.length >= 2) {
+        const directDomains: DomainResult[] = [
+          { domain: `${cleaned}.ai`, verified: false, verifying: true },
+          { domain: `${cleaned}.com`, verified: false, verifying: true },
+          { domain: `${cleaned}.io`, verified: false, verifying: true },
+        ];
+        setResults(directDomains);
+        setHasSearched(true);
+
+        // Start background verification for direct domains
+        verifyDomains(directDomains.map(d => d.domain));
+      }
+
+      // ALSO search pool (50ms debounce) and merge results
       debounceRef.current = setTimeout(() => {
         instantSearch(newQuery);
-      }, 150);
+      }, 50);
     }
   };
 

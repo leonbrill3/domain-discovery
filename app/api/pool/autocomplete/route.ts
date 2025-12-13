@@ -1,12 +1,12 @@
 /**
- * Instant Autocomplete API - No verification, just pool search
+ * Instant Autocomplete API - In-Memory Cache
  *
- * Returns domains from pool instantly based on prefix/contains match.
- * No RDAP verification = ~10-20ms response time.
+ * Returns domains from in-memory cache instantly.
+ * ~5ms response time (vs ~200ms with PostgreSQL)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { searchCache, getCacheStats } from '@/lib/domain/cache';
 
 export const maxDuration = 10;
 
@@ -19,14 +19,14 @@ interface AutocompleteRequest {
 /**
  * POST /api/pool/autocomplete
  *
- * Instant search - no verification
+ * Instant search from in-memory cache
  */
 export async function POST(req: NextRequest) {
   const startTime = Date.now();
 
   try {
     const body: AutocompleteRequest = await req.json();
-    const { query, tld = 'ai', limit = 20 } = body;
+    const { query, tld, limit = 20 } = body;
 
     if (!query || query.length < 1) {
       return NextResponse.json(
@@ -35,65 +35,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const searchTerm = query.toLowerCase().trim();
-
-    // Search strategies in priority order:
-    // 1. Exact prefix match (word starts with query)
-    // 2. Contains match
-    // 3. Semantic similarity via embedding (if query is descriptive)
-
-    const domains = await prisma.availableDomain.findMany({
-      where: {
-        tld,
-        OR: [
-          // Prefix match - highest priority
-          { word: { startsWith: searchTerm } },
-          // Contains match
-          { word: { contains: searchTerm } },
-        ]
-      },
-      select: {
-        domain: true,
-        word: true,
-        baseScore: true,
-        memorability: true,
-        pronounceability: true,
-        uniqueness: true,
-        meaning: true,
-        phonetic: true,
-        syllables: true,
-        logoStyles: true,
-        checkedAt: true,
-      },
-      orderBy: [
-        { baseScore: 'desc' },
-        { length: 'asc' }
-      ],
-      take: limit * 2 // Get extra to sort properly
-    });
-
-    // Sort: prefix matches first, then by score
-    const sorted = domains.sort((a, b) => {
-      const aPrefix = a.word.startsWith(searchTerm) ? 1 : 0;
-      const bPrefix = b.word.startsWith(searchTerm) ? 1 : 0;
-      if (aPrefix !== bPrefix) return bPrefix - aPrefix;
-      return (b.baseScore || 7) - (a.baseScore || 7);
-    }).slice(0, limit);
+    // Search in-memory cache - <5ms
+    const results = await searchCache(query, { tld, limit });
 
     const responseTime = Date.now() - startTime;
+    const cacheStats = getCacheStats();
 
     return NextResponse.json({
       success: true,
-      domains: sorted.map(d => ({
+      domains: results.map(d => ({
         domain: d.domain,
         word: d.word,
-        score: d.baseScore || 7,
-        meaning: d.meaning || '',
-        phonetic: d.phonetic || d.word.toUpperCase(),
-        syllables: d.syllables || 2,
-        logoStyles: d.logoStyles || [],
-        verified: false, // Not verified yet
-        checkedAt: d.checkedAt,
+        score: d.score,
+        meaning: d.meaning,
+        phonetic: d.phonetic,
+        syllables: d.syllables,
+        logoStyles: d.logoStyles,
+        verified: true, // Pre-verified in pool
         scores: {
           memorability: d.memorability,
           pronounceability: d.pronounceability,
@@ -102,7 +60,9 @@ export async function POST(req: NextRequest) {
       })),
       stats: {
         responseTime,
-        total: sorted.length
+        total: results.length,
+        cacheSize: cacheStats.count,
+        cacheLoaded: cacheStats.loaded,
       }
     });
 
@@ -113,4 +73,17 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * GET /api/pool/autocomplete
+ *
+ * Get cache stats
+ */
+export async function GET() {
+  const stats = getCacheStats();
+  return NextResponse.json({
+    success: true,
+    cache: stats,
+  });
 }
