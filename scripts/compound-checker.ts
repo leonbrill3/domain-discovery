@@ -20,7 +20,8 @@ const prisma = new PrismaClient();
 const CHECKS_PER_MINUTE = 30;
 const DELAY_MS = Math.ceil(60000 / CHECKS_PER_MINUTE); // ~2000ms between checks
 const BATCH_SIZE = 10;
-const TLD = process.env.CHECK_TLD || 'ai'; // Set CHECK_TLD=com for .com domains
+// Support multiple TLDs: CHECK_TLDS=ai,com (comma-separated)
+const TLDS = (process.env.CHECK_TLDS || process.env.CHECK_TLD || 'ai').split(',').map(t => t.trim());
 
 // Popular affixes for compound generation
 const SUFFIXES = [
@@ -131,17 +132,17 @@ function getPattern(word: string): string {
 }
 
 /**
- * Get or create compound progress tracker
+ * Get or create compound progress tracker for a specific TLD
  */
-async function getProgress(): Promise<CompoundProgress> {
+async function getProgress(tld: string): Promise<CompoundProgress> {
   const progress = await prisma.checkProgress.findUnique({
-    where: { tld: `${TLD}_compounds` }
+    where: { tld: `${tld}_compounds` }
   });
 
   if (!progress) {
     await prisma.checkProgress.create({
       data: {
-        tld: `${TLD}_compounds`,
+        tld: `${tld}_compounds`,
         totalChecked: 0,
         availableCount: 0,
         takenCount: 0
@@ -162,11 +163,11 @@ async function getProgress(): Promise<CompoundProgress> {
 }
 
 /**
- * Update compound progress
+ * Update compound progress for a specific TLD
  */
-async function updateProgress(baseWord: string, affix: string, checked: number, available: number, taken: number): Promise<void> {
+async function updateProgress(tld: string, baseWord: string, affix: string, checked: number, available: number, taken: number): Promise<void> {
   await prisma.checkProgress.update({
-    where: { tld: `${TLD}_compounds` },
+    where: { tld: `${tld}_compounds` },
     data: {
       lastWord: `${baseWord}:${affix}`,
       totalChecked: { increment: checked },
@@ -281,40 +282,18 @@ async function getBaseWords(): Promise<string[]> {
 }
 
 /**
- * Main compound checker loop
+ * Check compounds for a specific TLD
  */
-async function main() {
-  console.log('🔗 Compound Domain Checker Worker Started');
-  console.log(`   TLD: .${TLD}`);
-  console.log(`   Suffixes: ${SUFFIXES.join(', ')}`);
-  console.log(`   Prefixes: ${PREFIXES.join(', ')}`);
-  console.log(`   Rate: ${CHECKS_PER_MINUTE} checks/minute`);
-  console.log('');
+async function checkCompoundsForTLD(tld: string, baseWords: string[]): Promise<void> {
+  console.log(`\n🔗 Checking .${tld} compounds...`);
 
-  // Get base words from scored pool
-  const baseWords = await getBaseWords();
-  console.log(`📚 Found ${baseWords.length} base words in scored pool`);
-
-  if (baseWords.length === 0) {
-    console.log('⚠️  No scored words found. Waiting for scoring worker...');
-    while (true) {
-      await new Promise(resolve => setTimeout(resolve, 300000)); // 5 min
-      const newBase = await getBaseWords();
-      if (newBase.length > 0) {
-        console.log(`📚 Found ${newBase.length} base words, starting...`);
-        break;
-      }
-    }
-  }
-
-  // Get progress
-  const progress = await getProgress();
-  console.log(`📊 Progress: ${progress.totalChecked} checked, ${progress.availableCount} available compounds`);
+  // Get progress for this TLD
+  const progress = await getProgress(tld);
+  console.log(`📊 .${tld} Compounds: ${progress.totalChecked} checked, ${progress.availableCount} available`);
 
   // Calculate total compounds to check
   const allAffixes = [...SUFFIXES, ...PREFIXES];
   const totalCompounds = baseWords.length * allAffixes.length;
-  console.log(`🎯 Total compounds to generate: ~${totalCompounds.toLocaleString()}`);
 
   // Find starting point
   let startWordIndex = 0;
@@ -332,11 +311,11 @@ async function main() {
         startWordIndex++;
         startAffixIndex = 0;
       }
-      console.log(`▶️  Resuming from: ${progress.lastBaseWord} + ${progress.lastAffix}`);
+      console.log(`▶️  Resuming .${tld} from: ${progress.lastBaseWord} + ${progress.lastAffix}`);
     }
   }
 
-  // Process compounds
+  // Process 2-word compounds
   let checked = 0;
   let available = 0;
   let taken = 0;
@@ -344,7 +323,6 @@ async function main() {
 
   for (let wi = startWordIndex; wi < baseWords.length; wi++) {
     const baseWord = baseWords[wi];
-    const compounds = generateCompounds(baseWord);
 
     for (let ci = (wi === startWordIndex ? startAffixIndex : 0); ci < allAffixes.length; ci++) {
       const affix = allAffixes[ci];
@@ -362,7 +340,7 @@ async function main() {
         continue;
       }
 
-      const domain = `${compound}.${TLD}`;
+      const domain = `${compound}.${tld}`;
 
       // Check if already in database
       const existing = await prisma.availableDomain.findUnique({
@@ -380,7 +358,7 @@ async function main() {
       batchCount++;
 
       if (result.available) {
-        const added = await addToPool(compound, TLD, true);
+        const added = await addToPool(compound, tld, true);
         if (added) {
           available++;
           console.log(`  ✅ ${domain} (AVAILABLE - added to pool)`);
@@ -395,11 +373,11 @@ async function main() {
 
       // Update progress every BATCH_SIZE checks
       if (batchCount >= BATCH_SIZE) {
-        await updateProgress(baseWord, affix, batchCount, available, taken);
+        await updateProgress(tld, baseWord, affix, batchCount, available, taken);
 
         const totalDone = progress.totalChecked + checked;
         const pct = (totalDone / totalCompounds * 100).toFixed(2);
-        console.log(`\n📊 Progress: ${totalDone.toLocaleString()}/${totalCompounds.toLocaleString()} (${pct}%) | Available: ${progress.availableCount + available} | Session: +${available}\n`);
+        console.log(`\n📊 .${tld} Progress: ${totalDone.toLocaleString()}/${totalCompounds.toLocaleString()} (${pct}%) | Available: ${progress.availableCount + available}\n`);
 
         batchCount = 0;
         available = 0;
@@ -408,71 +386,76 @@ async function main() {
     }
   }
 
-  console.log('\n✅ Finished checking 2-word compounds!');
+  console.log(`\n✅ Finished 2-word .${tld} compounds!`);
 
-  // --- PHASE 2: 3-word compounds ---
-  console.log('\n🔗 Starting 3-word compound check...');
+  // --- 3-word compounds ---
+  console.log(`\n🔗 Checking 3-word .${tld} compounds...`);
   const threeWordCompounds = generateThreeWordCompounds();
-  console.log(`🎯 Total 3-word compounds to check: ${threeWordCompounds.length.toLocaleString()}`);
-  // Math: 20 prefixes × 40 middles × 13 suffixes = ~10,400 combinations
-
-  let threeWordChecked = 0;
-  let threeWordAvailable = 0;
-  let threeWordTaken = 0;
 
   for (const compound of threeWordCompounds) {
-    const domain = `${compound}.${TLD}`;
+    const domain = `${compound}.${tld}`;
 
-    // Check if already in database
     const existing = await prisma.availableDomain.findUnique({
       where: { domain }
     });
 
-    if (existing) {
-      console.log(`  ⏭️  ${domain} (already in pool)`);
-      continue;
-    }
+    if (existing) continue;
 
-    // Check availability
     const result = await checkDomainRDAP(domain);
-    threeWordChecked++;
 
     if (result.available) {
-      const added = await addToPool(compound, TLD, true);
+      const added = await addToPool(compound, tld, true);
       if (added) {
-        threeWordAvailable++;
-        console.log(`  ✅ ${domain} (AVAILABLE - added to pool)`);
+        console.log(`  ✅ ${domain} (AVAILABLE)`);
       }
     } else {
-      threeWordTaken++;
       console.log(`  ❌ ${domain} (taken)`);
     }
 
-    // Rate limiting
     await new Promise(resolve => setTimeout(resolve, DELAY_MS));
+  }
 
-    // Progress every 50 checks
-    if (threeWordChecked % 50 === 0) {
-      const pct = (threeWordChecked / threeWordCompounds.length * 100).toFixed(1);
-      console.log(`\n📊 3-word Progress: ${threeWordChecked}/${threeWordCompounds.length} (${pct}%) | Available: ${threeWordAvailable} | Taken: ${threeWordTaken}\n`);
+  console.log(`\n✅ Finished all .${tld} compounds!`);
+}
+
+/**
+ * Main compound checker loop - processes all TLDs
+ */
+async function main() {
+  console.log('🔗 Compound Domain Checker Worker Started');
+  console.log(`   TLDs: ${TLDS.map(t => '.' + t).join(', ')}`);
+  console.log(`   Rate: ${CHECKS_PER_MINUTE} checks/minute`);
+  console.log('');
+
+  // Get base words from scored pool
+  let baseWords = await getBaseWords();
+  console.log(`📚 Found ${baseWords.length} base words in scored pool`);
+
+  if (baseWords.length === 0) {
+    console.log('⚠️  No scored words found. Waiting for scoring worker...');
+    while (true) {
+      await new Promise(resolve => setTimeout(resolve, 300000)); // 5 min
+      baseWords = await getBaseWords();
+      if (baseWords.length > 0) {
+        console.log(`📚 Found ${baseWords.length} base words, starting...`);
+        break;
+      }
     }
   }
 
-  console.log('\n✅ Finished checking all 3-word compounds!');
-  console.log(`   Total checked: ${threeWordChecked}`);
-  console.log(`   Available: ${threeWordAvailable}`);
-  console.log(`   Taken: ${threeWordTaken}`);
-
-  // Keep running to handle new base words
+  // Process each TLD
   while (true) {
-    console.log('[Compound] All compounds checked. Checking for new base words in 1 hour...');
+    for (const tld of TLDS) {
+      await checkCompoundsForTLD(tld, baseWords);
+    }
+
+    console.log('\n[Compound] All TLDs checked. Checking for new base words in 1 hour...');
     await new Promise(resolve => setTimeout(resolve, 3600000));
 
     const newBase = await getBaseWords();
     if (newBase.length > baseWords.length) {
-      console.log(`[Compound] Found ${newBase.length - baseWords.length} new base words, restarting...`);
-      // Restart main to process new words
-      return main();
+      console.log(`[Compound] Found ${newBase.length - baseWords.length} new base words`);
+      baseWords = newBase;
     }
   }
 }

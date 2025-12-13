@@ -20,7 +20,8 @@ const prisma = new PrismaClient();
 const CHECKS_PER_MINUTE = 30;
 const DELAY_MS = Math.ceil(60000 / CHECKS_PER_MINUTE); // ~2000ms between checks
 const BATCH_SIZE = 10;
-const TLD = process.env.CHECK_TLD || 'ai'; // Set CHECK_TLD=com for .com domains
+// Support multiple TLDs: CHECK_TLDS=ai,com (comma-separated)
+const TLDS = (process.env.CHECK_TLDS || process.env.CHECK_TLD || 'ai').split(',').map(t => t.trim());
 
 // RDAP endpoints by TLD
 const RDAP_ENDPOINTS: Record<string, string> = {
@@ -63,16 +64,16 @@ async function checkDomainRDAP(domain: string): Promise<CheckResult> {
 }
 
 /**
- * Get or create progress tracker
+ * Get or create progress tracker for a specific TLD
  */
-async function getProgress(): Promise<{ lastWord: string | null; totalChecked: number; availableCount: number }> {
+async function getProgress(tld: string): Promise<{ lastWord: string | null; totalChecked: number; availableCount: number }> {
   const progress = await prisma.checkProgress.findUnique({
-    where: { tld: TLD }
+    where: { tld }
   });
 
   if (!progress) {
     await prisma.checkProgress.create({
-      data: { tld: TLD, totalChecked: 0, availableCount: 0, takenCount: 0 }
+      data: { tld, totalChecked: 0, availableCount: 0, takenCount: 0 }
     });
     return { lastWord: null, totalChecked: 0, availableCount: 0 };
   }
@@ -85,11 +86,11 @@ async function getProgress(): Promise<{ lastWord: string | null; totalChecked: n
 }
 
 /**
- * Update progress
+ * Update progress for a specific TLD
  */
-async function updateProgress(lastWord: string, checked: number, available: number, taken: number): Promise<void> {
+async function updateProgress(tld: string, lastWord: string, checked: number, available: number, taken: number): Promise<void> {
   await prisma.checkProgress.update({
-    where: { tld: TLD },
+    where: { tld },
     data: {
       lastWord,
       totalChecked: { increment: checked },
@@ -196,22 +197,14 @@ function generatePhoneticPatterns(limit: number): string[] {
 }
 
 /**
- * Main checker loop
+ * Check words for a specific TLD
  */
-async function main() {
-  console.log('🔍 Domain Availability Checker Worker Started');
-  console.log(`   TLD: .${TLD}`);
-  console.log(`   Rate: ${CHECKS_PER_MINUTE} checks/minute`);
-  console.log(`   Batch size: ${BATCH_SIZE}`);
-  console.log('');
+async function checkTLD(tld: string, allWords: string[]): Promise<void> {
+  console.log(`\n🔍 Checking .${tld} domains...`);
 
-  // Load word list
-  const allWords = loadWordList();
-  console.log(`📚 Loaded ${allWords.length} words to check`);
-
-  // Get progress
-  const progress = await getProgress();
-  console.log(`📊 Progress: ${progress.totalChecked} checked, ${progress.availableCount} available`);
+  // Get progress for this TLD
+  const progress = await getProgress(tld);
+  console.log(`📊 .${tld} Progress: ${progress.totalChecked} checked, ${progress.availableCount} available`);
 
   // Find starting point
   let startIndex = 0;
@@ -219,19 +212,13 @@ async function main() {
     const idx = allWords.indexOf(progress.lastWord);
     if (idx >= 0) {
       startIndex = idx + 1;
-      console.log(`▶️  Resuming from: ${progress.lastWord} (index ${startIndex})`);
+      console.log(`▶️  Resuming .${tld} from: ${progress.lastWord} (index ${startIndex})`);
     }
   }
 
   if (startIndex >= allWords.length) {
-    console.log('✅ All words have been checked!');
-    console.log('[Checker] Waiting for more words to be added...');
-
-    // Wait and check again later
-    while (true) {
-      await new Promise(resolve => setTimeout(resolve, 3600000)); // 1 hour
-      console.log('[Checker] Checking for new words...');
-    }
+    console.log(`✅ All .${tld} words have been checked!`);
+    return;
   }
 
   // Process words
@@ -243,7 +230,7 @@ async function main() {
     const batch = allWords.slice(i, i + BATCH_SIZE);
 
     for (const word of batch) {
-      const domain = `${word}.${TLD}`;
+      const domain = `${word}.${tld}`;
 
       // Check if already in database
       const existing = await prisma.availableDomain.findUnique({
@@ -260,7 +247,7 @@ async function main() {
       checked++;
 
       if (result.available) {
-        const added = await addToPool(word, TLD);
+        const added = await addToPool(word, tld);
         if (added) {
           available++;
           console.log(`  ✅ ${domain} (AVAILABLE - added to pool)`);
@@ -276,22 +263,41 @@ async function main() {
 
     // Update progress
     const lastWord = batch[batch.length - 1];
-    await updateProgress(lastWord, batch.length, available, taken);
+    await updateProgress(tld, lastWord, batch.length, available, taken);
 
     // Log progress
     const pct = ((i + batch.length) / allWords.length * 100).toFixed(1);
-    console.log(`\n📊 Progress: ${i + batch.length}/${allWords.length} (${pct}%) | Available: ${available} | Taken: ${taken}\n`);
+    console.log(`\n📊 .${tld} Progress: ${i + batch.length}/${allWords.length} (${pct}%) | Available: ${available} | Taken: ${taken}\n`);
 
     // Reset counters for next batch
     available = 0;
     taken = 0;
   }
 
-  console.log('\n✅ Finished checking all words!');
+  console.log(`\n✅ Finished checking all .${tld} words!`);
+}
 
-  // Keep running to handle future additions
+/**
+ * Main checker loop - processes all TLDs
+ */
+async function main() {
+  console.log('🔍 Domain Availability Checker Worker Started');
+  console.log(`   TLDs: ${TLDS.map(t => '.' + t).join(', ')}`);
+  console.log(`   Rate: ${CHECKS_PER_MINUTE} checks/minute`);
+  console.log(`   Batch size: ${BATCH_SIZE}`);
+  console.log('');
+
+  // Load word list
+  const allWords = loadWordList();
+  console.log(`📚 Loaded ${allWords.length} words to check`);
+
+  // Process each TLD
   while (true) {
-    console.log('[Checker] All words checked. Waiting 1 hour before rechecking...');
+    for (const tld of TLDS) {
+      await checkTLD(tld, allWords);
+    }
+
+    console.log('\n[Checker] All TLDs checked. Waiting 1 hour before rechecking...');
     await new Promise(resolve => setTimeout(resolve, 3600000));
   }
 }
