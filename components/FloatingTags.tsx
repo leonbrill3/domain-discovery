@@ -84,7 +84,7 @@ function FloatingTag({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
   const isRotating = Array.isArray(item.text);
-  const texts: string[] = isRotating ? item.text : [item.text as string];
+  const texts: string[] = isRotating ? (item.text as string[]) : [item.text as string];
   const currentText = texts[currentIndex];
 
   useEffect(() => {
