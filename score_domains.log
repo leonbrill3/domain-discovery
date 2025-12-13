@@ -1,0 +1,745 @@
+🎯 Domain Scoring & Embedding Script
+   Batch size: 15
+   Limit: all
+
+(node:53892) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/leonbrill/domain-discovery/scripts/score-domains.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/leonbrill/domain-discovery/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+📊 Found 608 unscored domains
+
+🔄 Processing batch 1/41
+   Domains: drays.ai, humeral.ai, actious.ai, queerer.ai, lanzon.ai, whortle.ai, sawers.ai, axseed.ai, thulias.ai, coween.ai, decurve.ai, wingcut.ai, oniscus.ai, ccws.ai, embower.ai
+   ✅ drays.ai: 6.2
+   ✅ humeral.ai: 5.8
+   ✅ actious.ai: 5.5
+   ✅ queerer.ai: 3.7
+   ✅ lanzon.ai: 6.5
+   ✅ whortle.ai: 4.8
+   ✅ sawers.ai: 5.3
+   ✅ axseed.ai: 6.7
+   ✅ thulias.ai: 5.9
+   ✅ coween.ai: 5.2
+   ✅ decurve.ai: 7.1
+   ✅ wingcut.ai: 6.4
+   ✅ oniscus.ai: 5.6
+   ✅ ccws.ai: 3.2
+   ✅ embower.ai: 6.3
+
+🔄 Processing batch 2/41
+   Domains: greyly.ai, fewmand.ai, cograil.ai, ozoena.ai, hughoc.ai, buddle.ai, rantree.ai, boreiad.ai, digor.ai, cosse.ai, fullers.ai, boily.ai, alnico.ai, fraps.ai, wynds.ai
+   ✅ greyly.ai: 6.5
+   ✅ fewmand.ai: 3.5
+   ✅ cograil.ai: 7.0
+   ✅ ozoena.ai: 4.0
+   ✅ hughoc.ai: 2.0
+   ✅ buddle.ai: 6.0
+   ✅ rantree.ai: 5.0
+   ✅ boreiad.ai: 3.0
+   ✅ digor.ai: 5.0
+   ✅ cosse.ai: 4.0
+   ✅ fullers.ai: 6.0
+   ✅ boily.ai: 4.0
+   ✅ alnico.ai: 6.0
+   ✅ fraps.ai: 5.0
+   ✅ wynds.ai: 3.0
+
+🔄 Processing batch 3/41
+   Domains: skiey.ai, oleos.ai, fogram.ai, cassate.ai, herbist.ai, lathery.ai, oldened.ai, liatris.ai, blader.ai, dinaric.ai, sejoin.ai, arcuale.ai, twitten.ai, cacumen.ai, mbunda.ai
+   ✅ skiey.ai: 7.2
+   ✅ oleos.ai: 5.5
+   ✅ fogram.ai: 6.3
+   ✅ cassate.ai: 6.7
+   ✅ herbist.ai: 7.5
+   ✅ lathery.ai: 5.8
+   ✅ oldened.ai: 4.5
+   ✅ liatris.ai: 6.2
+   ✅ blader.ai: 6.0
+   ✅ dinaric.ai: 6.5
+   ✅ sejoin.ai: 6.8
+   ✅ arcuale.ai: 6.3
+   ✅ twitten.ai: 5.5
+   ✅ cacumen.ai: 6.7
+   ✅ mbunda.ai: 4.8
+
+🔄 Processing batch 4/41
+   Domains: herniae.ai, linja.ai, donnee.ai, oncer.ai, inaxon.ai, siziest.ai, julus.ai, frenums.ai, ahaaina.ai, bahts.ai, unease.ai, trapes.ai, bhadon.ai, whalers.ai, rowens.ai
+   ✅ herniae.ai: 3.2
+   ✅ linja.ai: 6.5
+   ✅ donnee.ai: 5.7
+   ✅ oncer.ai: 4.3
+   ✅ inaxon.ai: 5.9
+   ✅ siziest.ai: 3.1
+   ✅ julus.ai: 5.5
+   ✅ frenums.ai: 3.8
+   ✅ ahaaina.ai: 2.9
+   ✅ bahts.ai: 4.2
+   ✅ unease.ai: 4.6
+   ✅ trapes.ai: 4.4
+   ✅ bhadon.ai: 4.1
+   ✅ whalers.ai: 5.7
+   ✅ rowens.ai: 5.3
+
+🔄 Processing batch 5/41
+   Domains: woan.ai, lecturn.ai, hardock.ai, exeat.ai, snithe.ai, kiliare.ai, glali.ai, cermet.ai, pundita.ai, tusches.ai, comals.ai, gramy.ai, raffman.ai, mantuas.ai, bursary.ai
+   ✅ woan.ai: 3.2
+   ✅ lecturn.ai: 6.7
+   ✅ hardock.ai: 4.1
+   ✅ exeat.ai: 5.6
+   ✅ snithe.ai: 3.8
+   ✅ kiliare.ai: 4.5
+   ✅ glali.ai: 4.2
+   ✅ cermet.ai: 5.9
+   ✅ pundita.ai: 5.3
+   ✅ tusches.ai: 3.7
+   ✅ comals.ai: 4.6
+   ✅ gramy.ai: 4.8
+   ✅ raffman.ai: 5.2
+   ✅ mantuas.ai: 5.5
+   ✅ bursary.ai: 6.9
+
+🔄 Processing batch 6/41
+   Domains: toughie.ai, cusping.ai, tangun.ai, burut.ai, coalbag.ai, funebre.ai, scowmen.ai, cupfuls.ai, senaah.ai, oncosis.ai, lipemic.ai, disheir.ai, thanage.ai, gorbal.ai, theyll.ai
+   ✅ toughie.ai: 6.2
+   ✅ cusping.ai: 5.5
+   ✅ tangun.ai: 4.8
+   ✅ burut.ai: 4.5
+   ✅ coalbag.ai: 3.7
+   ✅ funebre.ai: 5.3
+   ✅ scowmen.ai: 3.2
+   ✅ cupfuls.ai: 4.6
+   ✅ senaah.ai: 4.9
+   ✅ oncosis.ai: 6.1
+   ✅ lipemic.ai: 5.7
+   ✅ disheir.ai: 4.4
+   ✅ thanage.ai: 5.6
+   ✅ gorbal.ai: 4.7
+   ✅ theyll.ai: 2.9
+
+🔄 Processing batch 7/41
+   Domains: satd.ai, mirky.ai, duennas.ai, creasot.ai, nifling.ai, lotting.ai, scanmag.ai, plowboy.ai, rickety.ai, pipil.ai, slup.ai, misdiet.ai, blaflum.ai, oilmen.ai, sachets.ai
+   ✅ satd.ai: 3.2
+   ✅ mirky.ai: 5.5
+   ✅ duennas.ai: 4.7
+   ✅ creasot.ai: 3.8
+   ✅ nifling.ai: 4.5
+   ✅ lotting.ai: 4.2
+   ✅ scanmag.ai: 6.5
+   ✅ plowboy.ai: 5.3
+   ✅ rickety.ai: 5.7
+   ✅ pipil.ai: 4.1
+   ✅ slup.ai: 2.8
+   ✅ misdiet.ai: 4.6
+   ✅ blaflum.ai: 3.1
+   ✅ oilmen.ai: 6.2
+   ✅ sachets.ai: 5.9
+
+🔄 Processing batch 8/41
+   Domains: steeled.ai, manjel.ai, aubain.ai, lyes.ai, sabella.ai, upkeeps.ai, termage.ai, erects.ai, reveres.ai, garigue.ai, ascesis.ai, mulemen.ai, grapeys.ai, encurl.ai, marlock.ai
+   ✅ steeled.ai: 7.2
+   ✅ manjel.ai: 4.3
+   ✅ aubain.ai: 5.6
+   ✅ lyes.ai: 3.9
+   ✅ sabella.ai: 6.7
+   ✅ upkeeps.ai: 6.5
+   ✅ termage.ai: 5.8
+   ✅ erects.ai: 4.2
+   ✅ reveres.ai: 6.9
+   ✅ garigue.ai: 4.7
+   ✅ ascesis.ai: 5.3
+   ✅ mulemen.ai: 4.1
+   ✅ grapeys.ai: 3.6
+   ✅ encurl.ai: 5.5
+   ✅ marlock.ai: 4.9
+
+🔄 Processing batch 9/41
+   Domains: voglite.ai, doter.ai, teucer.ai, rhexis.ai, rostel.ai, bunning.ai, didler.ai, dropsy.ai, spingel.ai, agrania.ai, bkbndr.ai, untoxic.ai, amimide.ai, baubles.ai, strey.ai
+   ✅ voglite.ai: 7.2
+   ✅ doter.ai: 5.7
+   ✅ teucer.ai: 6.3
+   ✅ rhexis.ai: 7.5
+   ✅ rostel.ai: 6.8
+   ✅ bunning.ai: 5.2
+   ✅ didler.ai: 4.5
+   ✅ dropsy.ai: 5.0
+   ✅ spingel.ai: 6.0
+   ✅ agrania.ai: 7.0
+   ✅ bkbndr.ai: 3.5
+   ✅ untoxic.ai: 6.5
+   ✅ amimide.ai: 6.2
+   ✅ baubles.ai: 5.8
+   ✅ strey.ai: 5.5
+
+🔄 Processing batch 10/41
+   Domains: sanjib.ai, hodaddy.ai, avoue.ai, macchia.ai, hackee.ai, unsiege.ai, unhid.ai, slagged.ai, wirrah.ai, enmist.ai, cyke.ai, abeyant.ai, rillett.ai, morbify.ai, lauroyl.ai
+   ✅ sanjib.ai: 5.2
+   ✅ hodaddy.ai: 6.5
+   ✅ avoue.ai: 7.3
+   ✅ macchia.ai: 6.7
+   ✅ hackee.ai: 5.8
+   ✅ unsiege.ai: 6.2
+   ✅ unhid.ai: 5.5
+   ✅ slagged.ai: 4.9
+   ✅ wirrah.ai: 5.6
+   ✅ enmist.ai: 6.4
+   ✅ cyke.ai: 5.3
+   ✅ abeyant.ai: 7.1
+   ✅ rillett.ai: 5.7
+   ✅ morbify.ai: 6.0
+   ✅ lauroyl.ai: 5.5
+
+🔄 Processing batch 11/41
+   Domains: thills.ai, fenny.ai, quinin.ai, jewfish.ai, lashins.ai, incult.ai, voeten.ai, exactas.ai, jettage.ai, squitch.ai, gleets.ai, gluily.ai, cloine.ai, titmen.ai, bedlar.ai
+   ✅ thills.ai: 5.2
+   ✅ fenny.ai: 4.7
+   ✅ quinin.ai: 5.5
+   ✅ jewfish.ai: 3.8
+   ✅ lashins.ai: 4.5
+   ✅ incult.ai: 5.3
+   ✅ voeten.ai: 4.9
+   ✅ exactas.ai: 6.2
+   ✅ jettage.ai: 5.7
+   ✅ squitch.ai: 4.6
+   ✅ gleets.ai: 4.3
+   ✅ gluily.ai: 3.9
+   ✅ cloine.ai: 5.1
+   ✅ titmen.ai: 2.8
+   ✅ bedlar.ai: 4.2
+
+🔄 Processing batch 12/41
+   Domains: cobias.ai, lacily.ai, doddie.ai, ewery.ai, raglans.ai, trouty.ai, scythed.ai, imaum.ai, alarums.ai, dholes.ai, galaxes.ai, upbye.ai, buccaro.ai, palmers.ai, insea.ai
+   ✅ cobias.ai: 6.2
+   ✅ lacily.ai: 5.5
+   ✅ doddie.ai: 4.3
+   ✅ ewery.ai: 5.7
+   ✅ raglans.ai: 6.8
+   ✅ trouty.ai: 4.5
+   ✅ scythed.ai: 5.9
+   ✅ imaum.ai: 6.1
+   ✅ alarums.ai: 6.3
+   ✅ dholes.ai: 5.6
+   ✅ galaxes.ai: 7.2
+   ✅ upbye.ai: 5.1
+   ✅ buccaro.ai: 6.5
+   ✅ palmers.ai: 6.7
+   ✅ insea.ai: 5.8
+
+🔄 Processing batch 13/41
+   Domains: torsalo.ai, komtok.ai, arnicas.ai, undoped.ai, gympie.ai, maffle.ai, gluiest.ai, gladwin.ai, mapach.ai, lingoum.ai, guls.ai, vervine.ai, sugat.ai, dryly.ai, grewt.ai
+   ✅ torsalo.ai: 4.2
+   ✅ komtok.ai: 5.1
+   ✅ arnicas.ai: 6.3
+   ✅ undoped.ai: 5.7
+   ✅ gympie.ai: 4.5
+   ✅ maffle.ai: 4.8
+   ✅ gluiest.ai: 3.9
+   ✅ gladwin.ai: 6.5
+   ✅ mapach.ai: 5.2
+   ✅ lingoum.ai: 5.6
+   ✅ guls.ai: 4.1
+   ✅ vervine.ai: 6.1
+   ✅ sugat.ai: 5.4
+   ✅ dryly.ai: 5.3
+   ✅ grewt.ai: 3.7
+
+🔄 Processing batch 14/41
+   Domains: rotaman.ai, onlaid.ai, adurent.ai, polynoe.ai, sethite.ai, gadaea.ai, barrer.ai, cymarin.ai, polarly.ai, ambled.ai, gandum.ai, poxes.ai, remelt.ai, gaudish.ai, knelled.ai
+   ✅ rotaman.ai: 6.2
+   ✅ onlaid.ai: 5.5
+   ✅ adurent.ai: 5.8
+   ✅ polynoe.ai: 6.5
+   ✅ sethite.ai: 5.7
+   ✅ gadaea.ai: 5.3
+   ✅ barrer.ai: 5.9
+   ✅ cymarin.ai: 6.3
+   ✅ polarly.ai: 7.2
+   ✅ ambled.ai: 5.6
+   ✅ gandum.ai: 5.4
+   ✅ poxes.ai: 4.8
+   ✅ remelt.ai: 6.1
+   ✅ gaudish.ai: 5.7
+   ✅ knelled.ai: 5.3
+
+🔄 Processing batch 15/41
+   Domains: hazara.ai, garnice.ai, liangs.ai, irride.ai, campho.ai, cyprina.ai, taffies.ai, jaquima.ai, thyine.ai, anginas.ai, wample.ai, galeas.ai, isonymy.ai, ketimid.ai, abtruse.ai
+   ✅ hazara.ai: 6.2
+   ✅ garnice.ai: 5.8
+   ✅ liangs.ai: 4.5
+   ✅ irride.ai: 6.7
+   ✅ campho.ai: 5.3
+   ✅ cyprina.ai: 6.5
+   ✅ taffies.ai: 5.1
+   ✅ jaquima.ai: 5.9
+   ✅ thyine.ai: 6.3
+   ✅ anginas.ai: 4.2
+   ✅ wample.ai: 4.7
+   ✅ galeas.ai: 5.6
+   ✅ isonymy.ai: 6.8
+   ✅ ketimid.ai: 5.4
+   ✅ abtruse.ai: 6.6
+
+🔄 Processing batch 16/41
+   Domains: overwin.ai, maugre.ai, unold.ai, invenit.ai, bedim.ai, termen.ai, pappea.ai, phytins.ai, hebetic.ai, squeam.ai, ilkane.ai, urgings.ai, tundras.ai, smotter.ai, puriri.ai
+   ✅ overwin.ai: 7.2
+   ✅ maugre.ai: 4.5
+   ✅ unold.ai: 5.3
+   ✅ invenit.ai: 6.1
+   ✅ bedim.ai: 4.7
+   ✅ termen.ai: 5.6
+   ✅ pappea.ai: 3.9
+   ✅ phytins.ai: 4.2
+   ✅ hebetic.ai: 5.5
+   ✅ squeam.ai: 5.8
+   ✅ ilkane.ai: 4.6
+   ✅ urgings.ai: 6.3
+   ✅ tundras.ai: 7.1
+   ✅ smotter.ai: 3.7
+   ✅ puriri.ai: 4.4
+
+🔄 Processing batch 17/41
+   Domains: alodium.ai, twangs.ai, opercle.ai, puntist.ai, slackie.ai, kochab.ai, anabo.ai, wordish.ai, fogyish.ai, deckle.ai, caviled.ai, corydon.ai, prurigo.ai, herling.ai, additum.ai
+   ✅ alodium.ai: 7.2
+   ✅ twangs.ai: 4.3
+   ✅ opercle.ai: 6.1
+   ✅ puntist.ai: 5.7
+   ✅ slackie.ai: 3.9
+   ✅ kochab.ai: 6.8
+   ✅ anabo.ai: 6.5
+   ✅ wordish.ai: 5.6
+   ✅ fogyish.ai: 3.7
+   ✅ deckle.ai: 6.3
+   ✅ caviled.ai: 4.9
+   ✅ corydon.ai: 6.6
+   ✅ prurigo.ai: 5.5
+   ✅ herling.ai: 5.2
+   ✅ additum.ai: 7.0
+
+🔄 Processing batch 18/41
+   Domains: furole.ai, emerita.ai, rushee.ai, budling.ai, sedums.ai, thaught.ai, crible.ai, dowcote.ai, tinguy.ai, togaed.ai, turkois.ai, triary.ai, cuish.ai, bobbled.ai, grouts.ai
+   ✅ furole.ai: 4.2
+   ✅ emerita.ai: 7.5
+   ✅ rushee.ai: 5.3
+   ✅ budling.ai: 4.7
+   ✅ sedums.ai: 5.1
+   ✅ thaught.ai: 4.8
+   ✅ crible.ai: 5.5
+   ✅ dowcote.ai: 3.9
+   ✅ tinguy.ai: 4.2
+   ✅ togaed.ai: 5.6
+   ✅ turkois.ai: 5.3
+   ✅ triary.ai: 5.7
+   ✅ cuish.ai: 4.5
+   ✅ bobbled.ai: 4.1
+   ✅ grouts.ai: 4.6
+
+🔄 Processing batch 19/41
+   Domains: recost.ai, chapes.ai, phemic.ai, gruidae.ai, muled.ai, obsequy.ai, braccae.ai, calaber.ai, cotham.ai, gunned.ai, teepees.ai, itacism.ai, emodins.ai, feigner.ai, dumpage.ai
+   ✅ recost.ai: 5.2
+   ✅ chapes.ai: 4.7
+   ✅ phemic.ai: 5.5
+   ✅ gruidae.ai: 3.8
+   ✅ muled.ai: 5.0
+   ✅ obsequy.ai: 4.3
+   ✅ braccae.ai: 4.5
+   ✅ calaber.ai: 5.0
+   ✅ cotham.ai: 5.2
+   ✅ gunned.ai: 4.7
+   ✅ teepees.ai: 5.5
+   ✅ itacism.ai: 5.0
+   ✅ emodins.ai: 4.5
+   ✅ feigner.ai: 5.3
+   ✅ dumpage.ai: 4.2
+
+🔄 Processing batch 20/41
+   Domains: heling.ai, baggily.ai, loover.ai, awalim.ai, stomps.ai, keratto.ai, skevish.ai, flioma.ai, plunges.ai, piffler.ai, douping.ai, baggers.ai, osmics.ai, coshes.ai, pedary.ai
+   ✅ heling.ai: 4.2
+   ✅ baggily.ai: 3.1
+   ✅ loover.ai: 5.7
+   ✅ awalim.ai: 4.9
+   ✅ stomps.ai: 4.5
+   ✅ keratto.ai: 5.3
+   ✅ skevish.ai: 3.8
+   ✅ flioma.ai: 4.6
+   ✅ plunges.ai: 4.2
+   ✅ piffler.ai: 3.5
+   ✅ douping.ai: 3.7
+   ✅ baggers.ai: 3.9
+   ✅ osmics.ai: 5.1
+   ✅ coshes.ai: 3.6
+   ✅ pedary.ai: 4.4
+
+🔄 Processing batch 21/41
+   Domains: noggins.ai, abraum.ai, cadres.ai, pocosen.ai, gownlet.ai, lairds.ai, yawnups.ai, kellet.ai, ketyl.ai, uparna.ai, mengwe.ai, cuitle.ai, fallals.ai, assize.ai, meniver.ai
+   ✅ noggins.ai: 6.2
+   ✅ abraum.ai: 4.5
+   ✅ cadres.ai: 7.3
+   ✅ pocosen.ai: 3.7
+   ✅ gownlet.ai: 5.1
+   ✅ lairds.ai: 6.8
+   ✅ yawnups.ai: 3.2
+   ✅ kellet.ai: 5.6
+   ✅ ketyl.ai: 4.9
+   ✅ uparna.ai: 5.3
+   ✅ mengwe.ai: 4.7
+   ✅ cuitle.ai: 4.4
+   ✅ fallals.ai: 4.1
+   ✅ assize.ai: 6.5
+   ✅ meniver.ai: 5.2
+
+🔄 Processing batch 22/41
+   Domains: sannup.ai, dezaley.ai, unbokel.ai, pfunde.ai, sleb.ai, semifit.ai, enkraal.ai, neogamy.ai, edibile.ai, spated.ai, neurope.ai, glaieul.ai, batzen.ai, balize.ai, peewits.ai
+   ✅ sannup.ai: 6.2
+   ✅ dezaley.ai: 5.7
+   ✅ unbokel.ai: 5.5
+   ✅ pfunde.ai: 5.3
+   ✅ sleb.ai: 4.8
+   ✅ semifit.ai: 6.5
+   ✅ enkraal.ai: 5.6
+   ✅ neogamy.ai: 7.2
+   ✅ edibile.ai: 5.9
+   ✅ spated.ai: 5.0
+   ✅ neurope.ai: 7.5
+   ✅ glaieul.ai: 5.4
+   ✅ batzen.ai: 5.7
+   ✅ balize.ai: 6.0
+   ✅ peewits.ai: 5.5
+
+🔄 Processing batch 23/41
+   Domains: gaddang.ai, ageusic.ai, pashim.ai, undrape.ai, pulvic.ai, calvity.ai, hokku.ai, toxemia.ai, upttorn.ai, aerobes.ai, omits.ai, troughy.ai, ixias.ai, eases.ai, becking.ai
+   ✅ gaddang.ai: 4.2
+   ✅ ageusic.ai: 3.7
+   ✅ pashim.ai: 5.1
+   ✅ undrape.ai: 3.5
+   ✅ pulvic.ai: 4.8
+   ✅ calvity.ai: 4.6
+   ✅ hokku.ai: 6.3
+   ✅ toxemia.ai: 4.9
+   ✅ upttorn.ai: 3.2
+   ✅ aerobes.ai: 5.7
+   ✅ omits.ai: 4.1
+   ✅ troughy.ai: 3.3
+   ✅ ixias.ai: 4.5
+   ✅ eases.ai: 4.2
+   ✅ becking.ai: 3.8
+
+🔄 Processing batch 24/41
+   Domains: limli.ai, gracile.ai, devilry.ai, interj.ai, tummed.ai, neilah.ai, sprod.ai, alvelos.ai, prunes.ai, bichord.ai, dimout.ai, amylo.ai, broeboe.ai, pangful.ai, womaned.ai
+   ✅ limli.ai: 4.2
+   ✅ gracile.ai: 7.5
+   ✅ devilry.ai: 5.3
+   ✅ interj.ai: 6.1
+   ✅ tummed.ai: 3.7
+   ✅ neilah.ai: 6.5
+   ✅ sprod.ai: 4.0
+   ✅ alvelos.ai: 5.8
+   ✅ prunes.ai: 4.5
+   ✅ bichord.ai: 6.7
+   ✅ dimout.ai: 5.5
+   ✅ amylo.ai: 6.3
+   ✅ broeboe.ai: 3.9
+   ✅ pangful.ai: 5.2
+   ✅ womaned.ai: 4.8
+
+🔄 Processing batch 25/41
+   Domains: charras.ai, manqu.ai, chidra.ai, cosech.ai, sextons.ai, bribee.ai, wooer.ai, parroty.ai, caribi.ai, isicle.ai, trypeta.ai, cartful.ai, klanism.ai, kickee.ai, inrun.ai
+   ✅ charras.ai: 5.2
+   ✅ manqu.ai: 4.7
+   ✅ chidra.ai: 5.5
+   ✅ cosech.ai: 4.9
+   ✅ sextons.ai: 6.3
+   ✅ bribee.ai: 4.1
+   ✅ wooer.ai: 5.6
+   ✅ parroty.ai: 5.2
+   ✅ caribi.ai: 5.7
+   ✅ isicle.ai: 4.8
+   ✅ trypeta.ai: 5.1
+   ✅ cartful.ai: 5.4
+   ✅ klanism.ai: 2.1
+   ✅ kickee.ai: 4.5
+   ✅ inrun.ai: 5.9
+
+🔄 Processing batch 26/41
+   Domains: palew.ai, preloss.ai, obrazil.ai, saynay.ai, larlike.ai, rehid.ai, swisser.ai, bemata.ai, chaouia.ai, tanbur.ai, sanghs.ai, unacted.ai, spasmed.ai, shamoys.ai, adance.ai
+   ✅ palew.ai: 5.2
+   ✅ preloss.ai: 6.1
+   ✅ obrazil.ai: 5.7
+   ✅ saynay.ai: 4.9
+   ✅ larlike.ai: 5.3
+   ✅ rehid.ai: 4.6
+   ✅ swisser.ai: 6.4
+   ✅ bemata.ai: 5.5
+   ✅ chaouia.ai: 5.2
+   ✅ tanbur.ai: 5.8
+   ✅ sanghs.ai: 4.3
+   ✅ unacted.ai: 5.6
+   ✅ spasmed.ai: 3.9
+   ✅ shamoys.ai: 4.7
+   ✅ adance.ai: 5.9
+
+🔄 Processing batch 27/41
+   Domains: suluan.ai, affile.ai, anlet.ai, unideal.ai, lacepod.ai, chirred.ai, mealock.ai, crazed.ai, mediety.ai, aoli.ai, girnal.ai, hutzpa.ai, nosher.ai, parches.ai, muley.ai
+   ✅ suluan.ai: 3.2
+   ✅ affile.ai: 4.1
+   ✅ anlet.ai: 3.5
+   ✅ unideal.ai: 5.7
+   ✅ lacepod.ai: 6.3
+   ✅ chirred.ai: 4.2
+   ✅ mealock.ai: 5.8
+   ✅ crazed.ai: 5.5
+   ✅ mediety.ai: 4.9
+   ✅ aoli.ai: 3.7
+   ✅ girnal.ai: 3.4
+   ✅ hutzpa.ai: 5.6
+   ✅ nosher.ai: 5.2
+   ✅ parches.ai: 4.8
+   ✅ muley.ai: 4.3
+
+🔄 Processing batch 28/41
+   Domains: brents.ai, ogeed.ai, clof.ai, muzhiks.ai, temadau.ai, baizing.ai, diplopy.ai, isomers.ai, arachic.ai, quadral.ai, obiisms.ai, shilluh.ai, gabari.ai, shaled.ai, sunsmit.ai
+   ✅ brents.ai: 4.2
+   ✅ ogeed.ai: 3.7
+   ✅ clof.ai: 4.5
+   ✅ muzhiks.ai: 3.8
+   ✅ temadau.ai: 4.1
+   ✅ baizing.ai: 5.2
+   ✅ diplopy.ai: 5.5
+   ✅ isomers.ai: 6.8
+   ✅ arachic.ai: 4.6
+   ✅ quadral.ai: 6.2
+   ✅ obiisms.ai: 3.5
+   ✅ shilluh.ai: 4.3
+   ✅ gabari.ai: 5.7
+   ✅ shaled.ai: 4.9
+   ✅ sunsmit.ai: 5.4
+
+🔄 Processing batch 29/41
+   Domains: inconel.ai, sealkie.ai, dilated.ai, euhages.ai, cymlin.ai, husks.ai, ceorl.ai, arrace.ai, cangler.ai, campily.ai, maculae.ai, lushes.ai, timetrp.ai, undular.ai, scorny.ai
+   ✅ inconel.ai: 7.2
+   ✅ sealkie.ai: 4.3
+   ✅ dilated.ai: 6.7
+   ✅ euhages.ai: 2.1
+   ✅ cymlin.ai: 5.6
+   ✅ husks.ai: 5.8
+   ✅ ceorl.ai: 4.9
+   ✅ arrace.ai: 5.2
+   ✅ cangler.ai: 4.7
+   ✅ campily.ai: 5.5
+   ✅ maculae.ai: 6.3
+   ✅ lushes.ai: 4.6
+   ✅ timetrp.ai: 5.9
+   ✅ undular.ai: 6.5
+   ✅ scorny.ai: 4.2
+
+🔄 Processing batch 30/41
+   Domains: billman.ai, gugal.ai, bouse.ai, coxite.ai, propers.ai, ridden.ai, cheatee.ai, sulfids.ai, gerland.ai, rosular.ai, bugles.ai, amahs.ai, luggard.ai, filace.ai, inspan.ai
+   ✅ billman.ai: 6.2
+   ✅ gugal.ai: 4.5
+   ✅ bouse.ai: 3.8
+   ✅ coxite.ai: 5.5
+   ✅ propers.ai: 7.2
+   ✅ ridden.ai: 4.7
+   ✅ cheatee.ai: 3.5
+   ✅ sulfids.ai: 5.0
+   ✅ gerland.ai: 4.8
+   ✅ rosular.ai: 5.5
+   ✅ bugles.ai: 5.7
+   ✅ amahs.ai: 4.2
+   ✅ luggard.ai: 4.5
+   ✅ filace.ai: 5.3
+   ✅ inspan.ai: 6.0
+
+🔄 Processing batch 31/41
+   Domains: dillue.ai, shither.ai, timeous.ai, sarcous.ai, linguae.ai, hyppish.ai, outlash.ai, mesked.ai, unpicks.ai, bauckie.ai, upslip.ai, thyrse.ai, renins.ai, ratines.ai, backsey.ai
+   ✅ dillue.ai: 5.2
+   ✅ shither.ai: 2.1
+   ✅ timeous.ai: 6.5
+   ✅ sarcous.ai: 4.7
+   ✅ linguae.ai: 7.3
+   ✅ hyppish.ai: 4.1
+   ✅ outlash.ai: 5.8
+   ✅ mesked.ai: 4.5
+   ✅ unpicks.ai: 5.2
+   ✅ bauckie.ai: 3.9
+   ✅ upslip.ai: 4.6
+   ✅ thyrse.ai: 5.5
+   ✅ renins.ai: 5.7
+   ✅ ratines.ai: 4.8
+   ✅ backsey.ai: 3.7
+
+🔄 Processing batch 32/41
+   Domains: kerrite.ai, boding.ai, duarch.ai, frousty.ai, slurban.ai, jezails.ai, puther.ai, daymare.ai, erliche.ai, orbicle.ai, agallop.ai, truff.ai, rievers.ai, keslep.ai, afounde.ai
+   ✅ kerrite.ai: 6.2
+   ✅ boding.ai: 5.7
+   ✅ duarch.ai: 5.5
+   ✅ frousty.ai: 5.3
+   ✅ slurban.ai: 5.8
+   ✅ jezails.ai: 6.0
+   ✅ puther.ai: 5.2
+   ✅ daymare.ai: 7.0
+   ✅ erliche.ai: 5.5
+   ✅ orbicle.ai: 7.2
+   ✅ agallop.ai: 6.5
+   ✅ truff.ai: 6.0
+   ✅ rievers.ai: 6.3
+   ✅ keslep.ai: 5.0
+   ✅ afounde.ai: 5.5
+
+🔄 Processing batch 33/41
+   Domains: pannes.ai, isodrin.ai, yids.ai, emptied.ai, wastabl.ai, boliche.ai, owlhead.ai, ricing.ai, koppas.ai, vicarly.ai, ingnue.ai, feints.ai, jacking.ai, mismet.ai, sorbic.ai
+   ✅ pannes.ai: 4.2
+   ✅ isodrin.ai: 5.5
+   ✅ yids.ai: 2.1
+   ✅ emptied.ai: 3.7
+   ✅ wastabl.ai: 4.5
+   ✅ boliche.ai: 6.8
+   ✅ owlhead.ai: 7.2
+   ✅ ricing.ai: 5.1
+   ✅ koppas.ai: 5.6
+   ✅ vicarly.ai: 4.9
+   ✅ ingnue.ai: 5.3
+   ✅ feints.ai: 5.7
+   ✅ jacking.ai: 4.8
+   ✅ mismet.ai: 4.2
+   ✅ sorbic.ai: 6.5
+
+🔄 Processing batch 34/41
+   Domains: duchan.ai, lamming.ai, vappa.ai, lowse.ai, unchid.ai, deprome.ai, hooflet.ai, orgiac.ai, raffs.ai, aquarid.ai, kuphar.ai, barrico.ai, ecklein.ai, bevors.ai, iodol.ai
+   ✅ duchan.ai: 5.2
+   ✅ lamming.ai: 4.7
+   ✅ vappa.ai: 6.3
+   ✅ lowse.ai: 4.1
+   ✅ unchid.ai: 5.5
+   ✅ deprome.ai: 6.1
+   ✅ hooflet.ai: 5.8
+   ✅ orgiac.ai: 5.4
+   ✅ raffs.ai: 5.2
+   ✅ aquarid.ai: 6.7
+   ✅ kuphar.ai: 5.9
+   ✅ barrico.ai: 6.5
+   ✅ ecklein.ai: 5.3
+   ✅ bevors.ai: 4.9
+   ✅ iodol.ai: 5.6
+
+🔄 Processing batch 35/41
+   Domains: sneezes.ai, ladykin.ai, basion.ai, unleave.ai, unopted.ai, seljuk.ai, cuestas.ai, donatio.ai, disyoke.ai, ejected.ai, pionic.ai, ekes.ai, alecost.ai, cargued.ai, sialis.ai
+   ✅ sneezes.ai: 3.2
+   ✅ ladykin.ai: 5.5
+   ✅ basion.ai: 6.7
+   ✅ unleave.ai: 4.8
+   ✅ unopted.ai: 3.9
+   ✅ seljuk.ai: 5.6
+   ✅ cuestas.ai: 6.3
+   ✅ donatio.ai: 6.9
+   ✅ disyoke.ai: 5.2
+   ✅ ejected.ai: 4.5
+   ✅ pionic.ai: 6.1
+   ✅ ekes.ai: 3.7
+   ✅ alecost.ai: 5.4
+   ✅ cargued.ai: 4.2
+   ✅ sialis.ai: 5.8
+
+🔄 Processing batch 36/41
+   Domains: skeiner.ai, ovulite.ai, shigram.ai, latten.ai, rechuck.ai, elytrum.ai, decadi.ai, cathole.ai, tigrine.ai, snavel.ai, yogins.ai, xyloses.ai, aroast.ai, adenose.ai, momish.ai
+   ✅ skeiner.ai: 6.2
+   ✅ ovulite.ai: 5.8
+   ✅ shigram.ai: 6.5
+   ✅ latten.ai: 5.3
+   ✅ rechuck.ai: 4.7
+   ✅ elytrum.ai: 6.0
+   ✅ decadi.ai: 6.8
+   ✅ cathole.ai: 3.5
+   ✅ tigrine.ai: 6.3
+   ✅ snavel.ai: 5.5
+   ✅ yogins.ai: 5.7
+   ✅ xyloses.ai: 5.2
+   ✅ aroast.ai: 5.6
+   ✅ adenose.ai: 5.4
+   ✅ momish.ai: 4.9
+
+🔄 Processing batch 37/41
+   Domains: sansei.ai, faying.ai, sleyed.ai, jacture.ai, cupule.ai, woldy.ai, epicele.ai, putamen.ai, femic.ai, foggish.ai, hoer.ai, dingman.ai, garlion.ai, mammas.ai, disbuds.ai
+   ✅ sansei.ai: 7.2
+   ✅ faying.ai: 5.3
+   ✅ sleyed.ai: 4.1
+   ✅ jacture.ai: 6.7
+   ✅ cupule.ai: 5.6
+   ✅ woldy.ai: 4.8
+   ✅ epicele.ai: 6.4
+   ✅ putamen.ai: 6.2
+   ✅ femic.ai: 5.5
+   ✅ foggish.ai: 4.9
+   ✅ hoer.ai: 3.2
+   ✅ dingman.ai: 5.7
+   ✅ garlion.ai: 6.5
+   ✅ mammas.ai: 4.6
+   ✅ disbuds.ai: 5.1
+
+🔄 Processing batch 38/41
+   Domains: tychism.ai, holists.ai, fuligo.ai, bothros.ai, terass.ai, pannel.ai, semence.ai, zoochem.ai, inspeak.ai, habutai.ai, ulcery.ai, afshah.ai, peeved.ai, seggard.ai, homrai.ai
+   ✅ tychism.ai: 6.2
+   ✅ holists.ai: 7.1
+   ✅ fuligo.ai: 5.5
+   ✅ bothros.ai: 5.8
+   ✅ terass.ai: 6.0
+   ✅ pannel.ai: 7.3
+   ✅ semence.ai: 5.5
+   ✅ zoochem.ai: 7.2
+   ✅ inspeak.ai: 8.0
+   ✅ habutai.ai: 5.5
+   ✅ ulcery.ai: 4.2
+   ✅ afshah.ai: 4.8
+   ✅ peeved.ai: 5.5
+   ✅ seggard.ai: 5.3
+   ✅ homrai.ai: 4.7
+
+🔄 Processing batch 39/41
+   Domains: copple.ai, picae.ai, woffler.ai, erratas.ai, winned.ai, methide.ai, rehires.ai, tapnet.ai, effuso.ai, tosher.ai, backhoe.ai, assyth.ai, uredium.ai, flaxman.ai, ticul.ai
+   ✅ copple.ai: 6.2
+   ✅ picae.ai: 5.7
+   ✅ woffler.ai: 5.5
+   ✅ erratas.ai: 6.8
+   ✅ winned.ai: 5.3
+   ✅ methide.ai: 5.6
+   ✅ rehires.ai: 6.5
+   ✅ tapnet.ai: 6.7
+   ✅ effuso.ai: 6.0
+   ✅ tosher.ai: 5.4
+   ✅ backhoe.ai: 6.2
+   ✅ assyth.ai: 5.1
+   ✅ uredium.ai: 5.3
+   ✅ flaxman.ai: 6.6
+   ✅ ticul.ai: 5.2
+
+🔄 Processing batch 40/41
+   Domains: hypoxia.ai, pernod.ai, septate.ai, witlet.ai, goitres.ai, cwrite.ai, kyang.ai, totuava.ai, jacu.ai, dallop.ai, diluvia.ai, filices.ai, aband.ai, saluter.ai, nouille.ai
+   ✅ hypoxia.ai: 5.2
+   ✅ pernod.ai: 4.7
+   ✅ septate.ai: 4.5
+   ✅ witlet.ai: 6.3
+   ✅ goitres.ai: 3.8
+   ✅ cwrite.ai: 5.5
+   ✅ kyang.ai: 4.2
+   ✅ totuava.ai: 5.7
+   ✅ jacu.ai: 5.1
+   ✅ dallop.ai: 5.4
+   ✅ diluvia.ai: 6.1
+   ✅ filices.ai: 5.3
+   ✅ aband.ai: 4.6
+   ✅ saluter.ai: 5.8
+   ✅ nouille.ai: 5.5
+
+🔄 Processing batch 41/41
+   Domains: fosite.ai, nasat.ai, taluks.ai, awest.ai, olefin.ai, anesone.ai, clocher.ai, sereh.ai
+   ✅ fosite.ai: 7.2
+   ✅ nasat.ai: 5.3
+   ✅ taluks.ai: 4.6
+   ✅ awest.ai: 6.1
+   ✅ olefin.ai: 7.5
+   ✅ anesone.ai: 5.7
+   ✅ clocher.ai: 6.8
+   ✅ sereh.ai: 5.2
+
+📊 Summary:
+   Processed: 608
+   Errors: 0
+   Success rate: 100.0%

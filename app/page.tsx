@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { FloatingTags, RotatingText } from '@/components/FloatingTags';
 import { Tooltip } from 'react-tooltip';
-import { Heart, Search, X, ExternalLink } from 'lucide-react';
+import { Heart, Search, X, ExternalLink, Check, Loader2 } from 'lucide-react';
 
 interface DomainAnalysis {
   domain: string;
@@ -23,6 +23,39 @@ interface DomainAnalysis {
 interface DomainResult {
   domain: string;
   analysis?: DomainAnalysis;
+  quickScore?: number;
+  score?: number;
+  meaning?: string;
+  verified?: boolean;      // Has been verified via RDAP
+  verifying?: boolean;     // Currently being verified
+  available?: boolean;     // Result of verification (true = available, false = taken)
+}
+
+// Instant client-side scoring for hover tooltips (no API call)
+function getQuickScore(domain: string): number {
+  const word = domain.split('.')[0];
+  let score = 7.0; // baseline
+
+  // Length scoring
+  if (word.length >= 6 && word.length <= 10) score += 0.5;
+  else if (word.length < 5) score -= 0.5;
+  else if (word.length > 12) score -= 1;
+  else if (word.length > 15) score -= 2;
+
+  // Penalize numbers
+  if (/\d/.test(word)) score -= 2;
+
+  // Penalize hyphens
+  if (word.includes('-')) score -= 1.5;
+
+  // Penalize long consonant clusters (4+)
+  if (/[bcdfghjklmnpqrstvwxz]{4,}/i.test(word)) score -= 2;
+
+  // Bonus for common brandable patterns
+  if (/^[aeiou]/i.test(word)) score += 0.3; // starts with vowel
+  if (/[aeiou]$/i.test(word)) score += 0.3; // ends with vowel
+
+  return Math.max(1, Math.min(10, score));
 }
 
 export default function NewSearchPage() {
@@ -35,6 +68,98 @@ export default function NewSearchPage() {
   const [featuredLoading, setFeaturedLoading] = useState(true);
   const [selectedDomain, setSelectedDomain] = useState<DomainResult | null>(null);
   const [analyzingDomain, setAnalyzingDomain] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Instant search as user types (debounced)
+  const instantSearch = useCallback(async (searchQuery: string) => {
+    if (!searchQuery || searchQuery.length < 2) {
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/pool/autocomplete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: searchQuery, limit: 15 })
+      });
+      const data = await res.json();
+
+      if (data.success && data.domains) {
+        // Show results immediately (unverified)
+        const instantResults: DomainResult[] = data.domains.map((d: any) => ({
+          domain: d.domain,
+          score: d.score,
+          meaning: d.meaning,
+          verified: false,
+          verifying: true,
+        }));
+        setResults(instantResults);
+        setHasSearched(true);
+
+        // Start background verification
+        verifyDomains(instantResults.map(r => r.domain));
+      }
+    } catch (error) {
+      console.warn('Instant search failed:', error);
+    }
+  }, []);
+
+  // Background verification of domains
+  const verifyDomains = async (domains: string[]) => {
+    setVerifying(true);
+    try {
+      const res = await fetch('/api/pool/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domains })
+      });
+      const data = await res.json();
+
+      if (data.success && data.results) {
+        // Update results with verification status
+        setResults(prev => {
+          const updated = prev.map(r => {
+            const verification = data.results.find((v: any) => v.domain === r.domain);
+            if (verification) {
+              return {
+                ...r,
+                verified: true,
+                verifying: false,
+                available: verification.available
+              };
+            }
+            return r;
+          });
+          // Filter out taken domains
+          return updated.filter(r => !r.verified || r.available);
+        });
+      }
+    } catch (error) {
+      console.warn('Verification failed:', error);
+      // Mark all as verified (assume available) on error
+      setResults(prev => prev.map(r => ({ ...r, verified: true, verifying: false, available: true })));
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  // Handle query change with debounce
+  const handleQueryChange = (newQuery: string) => {
+    setQuery(newQuery);
+
+    // Clear previous debounce
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    // Debounce instant search (150ms)
+    if (newQuery.length >= 2) {
+      debounceRef.current = setTimeout(() => {
+        instantSearch(newQuery);
+      }, 150);
+    }
+  };
 
   // Load saved domains from localStorage
   useEffect(() => {
@@ -252,9 +377,9 @@ export default function NewSearchPage() {
           <input
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => handleQueryChange(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="meditation app inspired by greek mythology"
+            placeholder="Type to search... (e.g., 'fit', 'zen', 'tech')"
             className="text-lg bg-transparent border-0 outline-none
                        placeholder:text-gray-400 text-gray-900
                        w-full"
@@ -302,12 +427,19 @@ export default function NewSearchPage() {
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0">
+                      {/* Verification status indicator */}
+                      {domainResult.verifying ? (
+                        <Loader2 className="w-4 h-4 text-gray-400 animate-spin flex-shrink-0" />
+                      ) : domainResult.verified ? (
+                        <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
+                      ) : null}
                       <span className="font-mono text-base text-blue-600 truncate">
                         {domainResult.domain}
                       </span>
-                      {domainResult.analysis && (
+                      {/* Show score from pool or analysis */}
+                      {(domainResult.score || domainResult.analysis?.overallScore) && (
                         <span className="text-sm font-medium text-orange-500 flex-shrink-0">
-                          {domainResult.analysis.overallScore.toFixed(1)}
+                          {(domainResult.analysis?.overallScore || domainResult.score || 7).toFixed(1)}
                         </span>
                       )}
                     </div>
